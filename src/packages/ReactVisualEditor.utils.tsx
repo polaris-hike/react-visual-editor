@@ -1,3 +1,5 @@
+import { ReactComponentElement } from "react";
+
 export interface ReactVisualEditorBlock {
     componentKey: string;
     top: number;
@@ -17,6 +19,14 @@ export interface ReactVisualEditorComponent {
     name: string;
     preview: () => JSX.Element;
     render: () => JSX.Element;
+}
+
+export function createVisualBlock({top,left,component}:{top:number,left:number,component:ReactVisualEditorComponent}) {
+    return {
+        componentKey:component.key,
+        left,
+        top
+    }
 }
 
 export function createVisualConfig() {
