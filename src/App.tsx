@@ -2,6 +2,8 @@ import {useRef, useState} from 'react';
 import './app.scss';
 import { useCallbackRef } from './packages/hooks/useCallbackRef';
 import ReactVisualEditor from './packages/ReactVisualEditor';
+import { ReactVisualEditorValue } from './packages/ReactVisualEditor.utils';
+import { visualConfig } from './visual.config';
 
 function App() {
   // const [pos,setPos] = useState({
@@ -46,11 +48,18 @@ function App() {
 
   //   return {mousedown}
   // })()
+  const  [editorValue,setEditorValue] = useState<ReactVisualEditorValue>({
+    container:{
+      width: 700,
+      height: 1000
+    },
+    blocks: []    
+  })
 
 
   return (
     <>
-    <ReactVisualEditor />
+    <ReactVisualEditor config={visualConfig} value={editorValue} onChange={setEditorValue} />
     </>
     // <div>
     //  <div  style={{
