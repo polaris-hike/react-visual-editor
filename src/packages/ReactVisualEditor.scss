@@ -124,6 +124,7 @@ $primary: #409EFF;
     overflow-y: auto;
 
     .react-visual-editor-container {
+      background-color: white;
       .react-visual-editor-block {
         &:after {
           content: '';

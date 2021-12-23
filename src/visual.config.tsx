@@ -12,8 +12,8 @@ visualConfig.registryComponent('text',{
 
 visualConfig.registryComponent('button',{
     name: '按钮',
-    preview: ()=> <Button>预览 button</Button>,
-    render: () => <Button>render button</Button>
+    preview: ()=> <Button type='primary'>预览 button</Button>,
+    render: () => <Button type='primary'>render button</Button>
 })
 
 visualConfig.registryComponent('input',{

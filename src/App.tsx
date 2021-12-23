@@ -53,7 +53,23 @@ function App() {
       width: 700,
       height: 1000
     },
-    blocks: []    
+    blocks: [
+      {
+        componentKey: 'text',
+        left: 100,
+        top: 100
+      },
+      {
+        componentKey: 'input',
+        left: 200,
+        top: 200
+      },
+      {
+        componentKey: 'button',
+        left: 300,
+        top: 300
+      },
+    ]    
   })
 
 
