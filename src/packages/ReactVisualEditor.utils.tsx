@@ -5,6 +5,7 @@ export interface ReactVisualEditorBlock {
     top: number;
     left: number;
     adjustPosition:boolean;
+    focus: boolean;
 }
 
 export interface ReactVisualEditorValue {
@@ -22,12 +23,13 @@ export interface ReactVisualEditorComponent {
     render: () => JSX.Element;
 }
 
-export function createVisualBlock({top,left,component}:{top:number,left:number,component:ReactVisualEditorComponent}) {
+export function createVisualBlock({top,left,component}:{top:number,left:number,component:ReactVisualEditorComponent}):ReactVisualEditorBlock {
     return {
         componentKey:component.key,
         left,
         top,
-        adjustPosition: true
+        adjustPosition: true,
+        focus: false
     }
 }
 

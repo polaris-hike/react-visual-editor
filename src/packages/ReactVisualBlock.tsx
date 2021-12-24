@@ -1,3 +1,4 @@
+import classnames from 'classnames';
 import { useEffect, useMemo, useRef } from 'react'
 import { useUpdate } from './hooks/useUpdate';
 import './ReactVisualEditor.scss'
@@ -5,7 +6,8 @@ import { ReactVisualConfig, ReactVisualEditorBlock } from './ReactVisualEditor.u
 
 export const ReactVisualBlock: React.FC<{
     block: ReactVisualEditorBlock,
-    config: ReactVisualConfig
+    config: ReactVisualConfig,
+    onMouseDown?:(e:React.MouseEvent<HTMLDivElement>)=>void
 }> = (props) => {
     const { config,block } = props;
     const component = config.componentMap[block.componentKey];
@@ -19,6 +21,11 @@ export const ReactVisualBlock: React.FC<{
       }, [block.top, block.left, block.adjustPosition]);
     const elRef = useRef({} as HTMLDivElement);
 
+    const classes = useMemo(()=>classnames([
+      'react-visual-editor-block',
+      props.block.focus && 'react-visual-editor-block-focus'
+      ]),[props.block.focus])
+
     useEffect(() => {
         if (block.adjustPosition) {
           const {top, left} = block;
@@ -30,7 +37,7 @@ export const ReactVisualBlock: React.FC<{
         }
       }, []);
     return (
-        <div className='react-visual-editor-block' ref={elRef} style={blockStyle}>
+        <div className={classes} onMouseDown={props.onMouseDown} ref={elRef} style={blockStyle}>
             {component.preview()}
         </div>
     )
