@@ -8,6 +8,7 @@ export function useVisualCommand(
     {
         focusData,
         value,
+        onChange,
         updateBlocks,
         dragstart,
         dragend,
@@ -18,6 +19,7 @@ export function useVisualCommand(
         },
         value: ReactVisualEditorValue,
         updateBlocks: (blocks:ReactVisualEditorBlock[]) => void,
+        onChange: (val: ReactVisualEditorValue) => void,
         dragstart: { on: (cb: () => void) => void, off: (cb: () => void) => void },
         dragend: { on: (cb: () => void) => void, off: (cb: () => void) => void },
     }
@@ -142,6 +144,26 @@ export function useVisualCommand(
         }
     });
 
+    commander.useRegistry({
+        name: 'updateValue',
+        execute: (newModelValue: ReactVisualEditorValue) => {
+            let before: undefined | ReactVisualEditorValue = undefined
+            let after: undefined | ReactVisualEditorValue = undefined
+            return {
+                redo: () => {
+                    if (!before && !after) {
+                        before = deepcopy(value)
+                        onChange(deepcopy(newModelValue))
+                        after = deepcopy(newModelValue)
+                    } else {
+                        onChange(deepcopy(after!))
+                    }
+                },
+                undo: () => onChange(deepcopy(before!)),
+            }
+        },
+    });
+
     (() => {
         const dragData = useRef({before: null as null | ReactVisualEditorBlock[]})
         const handler = {
@@ -181,7 +203,6 @@ export function useVisualCommand(
         })
     })();
 
-
     commander.useInit();
 
     return {
@@ -191,5 +212,7 @@ export function useVisualCommand(
         placeTop: () => commander.state.commands.placeTop(),
         placeBottom: () => commander.state.commands.placeBottom(),
         clear: () => commander.state.commands.clear(),
+        updateValue: (newModelValue: VisualEditorValue) => commander.state.commands.updateValue(newModelValue),
+        updateBlock: (newBlock: VisualEditorBlock, oldBlock: VisualEditorBlock) => commander.state.commands.updateBlock(newBlock, oldBlock),
     }
 }

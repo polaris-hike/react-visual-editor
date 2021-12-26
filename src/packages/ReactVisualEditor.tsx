@@ -1,7 +1,9 @@
+import { notification } from 'antd';
 import classnames from 'classnames';
 import { useMemo, useRef, useState } from 'react';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { createEvent } from './plugins/event';
+import {$$dialog} from "./service/dialog";
 import { ReactVisualBlock } from './ReactVisualBlock';
 import { useVisualCommand } from './ReactVisualEditor.command';
 import './ReactVisualEditor.scss';
@@ -12,7 +14,7 @@ const ReactVisualEditor: React.FC<{
   onChange: (val: ReactVisualEditorValue) => void,
   config: ReactVisualConfig
 }> = (props) => {
-  const { value, config } = props;
+  const { value, config, onChange } = props;
   const [preview, setPreview] = useState(false);
   const [editing, setEditing] = useState(false);
   const [dragstart] = useState(() => createEvent())
@@ -182,7 +184,8 @@ const ReactVisualEditor: React.FC<{
     updateBlocks: blockChoseMethods.updateBlocks,
     focusData,
     dragstart,
-    dragend
+    dragend,
+    onChange: onChange,
   })
 
   const buttons: {
@@ -205,24 +208,24 @@ const ReactVisualEditor: React.FC<{
       },
       {
         label: '导入', icon: 'icon-import', handler: async () => {
-          // const text = await $$dialog.textarea('', {title: '请输入导入的JSON字符串'})
-          // try {
-          //   const data = JSON.parse(text || '')
-          //   commander.updateValue(data)
-          // } catch (e) {
-          //   console.error(e)
-          //   notification.open({
-          //     message: '导入失败！',
-          //     description: '导入的数据格式不正常，请检查！'
-          //   })
-          // }
+          const text = await $$dialog.textarea('', {title: '请输入导入的JSON字符串'})
+          try {
+            const data = JSON.parse(text || '')
+            commander.updateValue(data);
+          } catch (e) {
+            console.error(e)
+            notification.open({
+              message: '导入失败！',
+              description: '导入的数据格式不正常，请检查！'
+            })
+          }
         }
       },
       {
         label: '导出',
         icon: 'icon-export',
-        handler: () => { }
-      },
+        handler: () => $$dialog.textarea(JSON.stringify(props.value), {editReadonly: true, title: '导出的JSON数据'})
+    },
       {label: '置顶', icon: 'icon-place-top', handler: () => commander.placeTop(), tip: 'ctrl+up'},
       {label: '置底', icon: 'icon-place-bottom', handler: () => commander.placeBottom(), tip: 'ctrl+down'},
       { label: '删除', icon: 'icon-delete', handler: () => commander.delete() , tip: 'ctrl+d, backspace, delete' },
