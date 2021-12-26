@@ -59,7 +59,7 @@ function App() {
         left: 100,
         top: 100,
         adjustPosition:false,
-        focus: true,
+        focus: false,
         zIndex: 0
       },
       {

@@ -125,6 +125,18 @@ $primary: #409EFF;
 
     .react-visual-editor-container {
       background-color: white;
+
+      &::before {
+        position: absolute;
+        content: '';
+        left: 0;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        border: 1px dashed $primary;
+        pointer-events: none;
+      }
+
       .react-visual-editor-block {
         &:after {
           content: '';
@@ -232,6 +244,9 @@ $primary: #409EFF;
 
   &.react-visual-editor-preview {
     .react-visual-editor-container {
+      &::before {
+        display: none;
+      }
       .react-visual-editor-block {
         &:after {
           display: none;

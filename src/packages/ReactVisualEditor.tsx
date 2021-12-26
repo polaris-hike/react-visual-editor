@@ -1,4 +1,5 @@
-import { ReactComponentElement, useMemo, useRef, useState } from 'react';
+import classnames from 'classnames';
+import { useMemo, useRef, useState } from 'react';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { createEvent } from './plugins/event';
 import { ReactVisualBlock } from './ReactVisualBlock';
@@ -23,6 +24,11 @@ const ReactVisualEditor: React.FC<{
       width: `${value.container.width}px`,
     }
   }, [value.container.width, value.container.height])
+
+  const classes = useMemo(() => classnames([
+    'react-visual-editor',
+    preview && 'react-visual-editor-preview',
+]), [preview])
 
   const containerRef = useRef({} as HTMLDivElement);
 
@@ -126,8 +132,9 @@ const ReactVisualEditor: React.FC<{
 
   const focusHandler = (() => {
     const mouseDownBlock = (e: React.MouseEvent<HTMLDivElement>, block: ReactVisualEditorBlock) => {
+      if (preview) return;
       e.stopPropagation();
-      console.log('block')
+      e.preventDefault();
       if (e.ctrlKey) {
         /*如果摁住了ctrl键，如果此时没有选中的block，就选中这个block，否则令这个block的选中状态取反*/
         if (focusData.focus.length <= 1) {
@@ -146,8 +153,7 @@ const ReactVisualEditor: React.FC<{
       setTimeout(() => blockDraggier.mousedown(e))
     };
     const mouseDownContainer = (e: React.MouseEvent<HTMLDivElement>) => {
-      console.log('container')
-      //   if (e.target != e.currentTarget) {return;}
+      if (preview) return;
       if (!e.shiftKey) { blockChoseMethods.clearFocus(); }
     };
     return { mouseDownBlock, mouseDownContainer };
@@ -220,7 +226,7 @@ const ReactVisualEditor: React.FC<{
       {label: '置顶', icon: 'icon-place-top', handler: () => commander.placeTop(), tip: 'ctrl+up'},
       {label: '置底', icon: 'icon-place-bottom', handler: () => commander.placeBottom(), tip: 'ctrl+down'},
       { label: '删除', icon: 'icon-delete', handler: () => commander.delete() , tip: 'ctrl+d, backspace, delete' },
-      { label: '清空', icon: 'icon-reset', handler: () => { }, },
+      { label: '清空', icon: 'icon-reset', handler: () => commander.clear() , },
       {
         label: '关闭', icon: 'icon-close', handler: () => {
           blockChoseMethods.clearFocus()
@@ -229,11 +235,8 @@ const ReactVisualEditor: React.FC<{
       },
     ]
 
-
-
-
   return (
-    <div className="react-visual-editor">
+    <div className={classes}>
       <section className="react-visual-editor-menu">
         {
           config.componentArray.map((component, index) => (

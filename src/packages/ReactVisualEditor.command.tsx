@@ -23,6 +23,8 @@ export function useVisualCommand(
     }
 ) {
     const commander = useCommander();
+
+    // 删除
     commander.useRegistry({
         name: 'delete',
         keyboard: [
@@ -44,6 +46,7 @@ export function useVisualCommand(
         },
     });
 
+    // 全选
     commander.useRegistry({
         name: 'selectAll',
         keyboard: 'ctrl+a',
@@ -62,6 +65,7 @@ export function useVisualCommand(
         followQueue:false
     }); 
 
+    // 置顶
     commander.useRegistry({
         name: 'placeTop',
         keyboard: 'ctrl+up',
@@ -89,6 +93,7 @@ export function useVisualCommand(
         }
     })
 
+    // 置底
     commander.useRegistry({
         name: 'placeBottom',
         keyboard: 'ctrl+down',
@@ -106,6 +111,25 @@ export function useVisualCommand(
                     focus.forEach(block => block.zIndex = minZIndex)
                     return deepcopy(value.blocks)
                 })()),
+            }
+            return {
+                redo: () => {
+                    updateBlocks(deepcopy(data.after))
+                },
+                undo: () => {
+                    updateBlocks(deepcopy(data.before))
+                },
+            }
+        }
+    });
+
+    // 清空
+    commander.useRegistry({
+        name: 'clear',
+        execute: () => {
+            let data = {
+                before: deepcopy(value.blocks),
+                after: deepcopy([]),
             }
             return {
                 redo: () => {
@@ -166,5 +190,6 @@ export function useVisualCommand(
         redo: () => commander.state.commands.redo(),
         placeTop: () => commander.state.commands.placeTop(),
         placeBottom: () => commander.state.commands.placeBottom(),
+        clear: () => commander.state.commands.clear(),
     }
 }
