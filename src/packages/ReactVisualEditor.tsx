@@ -77,7 +77,8 @@ const ReactVisualEditor: React.FC<{
     const dragData = useRef({
       startX: 0,                                             // 拖拽开始时，鼠标的left
       startY: 0,                                             // 拖拽开始时，鼠标的top
-      startPosArray: [] as { top: number, left: number }[]   // 拖拽开始时， 所有选中的block元素的top，left值
+      startPosArray: [] as { top: number, left: number }[],   // 拖拽开始时， 所有选中的block元素的top，left值
+      dragging: false,
     })
 
     const mousedown = useCallbackRef((e: React.MouseEvent<HTMLDivElement>) => {
@@ -86,10 +87,15 @@ const ReactVisualEditor: React.FC<{
       dragData.current = {
         startX: e.clientX,
         startY: e.clientY,
-        startPosArray: focusData.focus.map(({ top, left }) => ({ top, left }))
+        startPosArray: focusData.focus.map(({ top, left }) => ({ top, left })),
+        dragging: false,
       }
     });
     const mousemove = useCallbackRef((e: MouseEvent) => {
+      if (!dragData.current.dragging) {
+        dragData.current.dragging = true;
+        dragstart.emit();
+      };
       const { startX, startY, startPosArray } = dragData.current;
       const { clientX: moveX, clientY: moveY } = e;
       const durX = moveX - startX, durY = moveY - startY;
@@ -98,11 +104,14 @@ const ReactVisualEditor: React.FC<{
         block.top = top + durY;
         block.left = left + durX;
         blockChoseMethods.updateBlocks(props.value.blocks)
-      })
+      });
     });
     const mouseup = useCallbackRef((e: MouseEvent) => {
       document.removeEventListener('mousemove', mousemove);
       document.removeEventListener('mouseup', mouseup);
+      if (dragData.current.dragging) {
+        dragend.emit();
+      }
     });
 
     return { mousedown, mousemove, mouseup }
