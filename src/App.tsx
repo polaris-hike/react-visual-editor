@@ -59,21 +59,24 @@ function App() {
         left: 100,
         top: 100,
         adjustPosition:false,
-        focus: true
+        focus: true,
+        zIndex: 0
       },
       {
         componentKey: 'input',
         left: 200,
         top: 200,
         adjustPosition:false,
-        focus: false
+        focus: false,
+        zIndex: 0
       },
       {
         componentKey: 'button',
         left: 300,
         top: 300,
         adjustPosition:false,
-        focus: false
+        focus: false,
+        zIndex: 0
       },
     ]    
   })

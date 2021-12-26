@@ -54,12 +54,69 @@ export function useVisualCommand(
             })
             return {
                 redo: () => {
+                    value.blocks.forEach(block => block.focus = true)
                     updateBlocks(deepcopy(blocks));
                 }
             }
         },
         followQueue:false
     }); 
+
+    commander.useRegistry({
+        name: 'placeTop',
+        keyboard: 'ctrl+up',
+        execute: () => {
+            console.log('placeTop')
+            let data = {
+                before: deepcopy(value.blocks),
+                after: deepcopy((() => {
+                    const {focus, unFocus} = focusData;
+                    const maxZIndex = unFocus.reduce((prev, block) => Math.max(prev, block.zIndex), -Infinity) + 1;
+                    console.log(maxZIndex)
+                    focus.forEach(block => block.zIndex = maxZIndex);
+                    return value.blocks;
+                })()),
+            }
+            return {
+                redo: () => {
+                    console.log(deepcopy(data.after))
+                    updateBlocks(deepcopy(data.after))
+                },
+                undo: () => {
+                    updateBlocks(deepcopy(data.before))
+                },
+            }
+        }
+    })
+
+    commander.useRegistry({
+        name: 'placeBottom',
+        keyboard: 'ctrl+down',
+        execute: () => {
+            let data = {
+                before: deepcopy(value.blocks),
+                after: deepcopy((() => {
+                    const {focus, unFocus} = focusData;
+                    let minZIndex = unFocus.reduce((prev, block) => Math.min(prev, block.zIndex), Infinity) - 1
+                    if (minZIndex < 0) {
+                        const dur = Math.abs(minZIndex)
+                        unFocus.forEach(block => block.zIndex += dur)
+                        minZIndex = 0
+                    }
+                    focus.forEach(block => block.zIndex = minZIndex)
+                    return deepcopy(value.blocks)
+                })()),
+            }
+            return {
+                redo: () => {
+                    updateBlocks(deepcopy(data.after))
+                },
+                undo: () => {
+                    updateBlocks(deepcopy(data.before))
+                },
+            }
+        }
+    });
 
     (() => {
         const dragData = useRef({before: null as null | ReactVisualEditorBlock[]})
@@ -107,5 +164,7 @@ export function useVisualCommand(
         delete: () => commander.state.commands.delete(),
         undo: () => commander.state.commands.undo(),
         redo: () => commander.state.commands.redo(),
+        placeTop: () => commander.state.commands.placeTop(),
+        placeBottom: () => commander.state.commands.placeBottom(),
     }
 }

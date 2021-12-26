@@ -16,9 +16,10 @@ export const ReactVisualBlock: React.FC<{
         return {
           left: `${block.left}px`,
           top: `${block.top}px`,
+          zIndex: block.zIndex,
           opacity: block.adjustPosition ? '0' : '1'
         };
-      }, [block.top, block.left, block.adjustPosition]);
+      }, [block.top, block.left, block.adjustPosition,block.zIndex]);
     const elRef = useRef({} as HTMLDivElement);
 
     const classes = useMemo(()=>classnames([

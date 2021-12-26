@@ -95,7 +95,7 @@ const ReactVisualEditor: React.FC<{
       if (!dragData.current.dragging) {
         dragData.current.dragging = true;
         dragstart.emit();
-      };
+      };  
       const { startX, startY, startPosArray } = dragData.current;
       const { clientX: moveX, clientY: moveY } = e;
       const durX = moveX - startX, durY = moveY - startY;
@@ -217,8 +217,8 @@ const ReactVisualEditor: React.FC<{
         icon: 'icon-export',
         handler: () => { }
       },
-      // {label: '置顶', icon: 'icon-place-top', handler: () => commander.placeTop(), tip: 'ctrl+up'},
-      // {label: '置底', icon: 'icon-place-bottom', handler: () => commander.placeBottom(), tip: 'ctrl+down'},
+      {label: '置顶', icon: 'icon-place-top', handler: () => commander.placeTop(), tip: 'ctrl+up'},
+      {label: '置底', icon: 'icon-place-bottom', handler: () => commander.placeBottom(), tip: 'ctrl+down'},
       { label: '删除', icon: 'icon-delete', handler: () => commander.delete() , tip: 'ctrl+d, backspace, delete' },
       { label: '清空', icon: 'icon-reset', handler: () => { }, },
       {

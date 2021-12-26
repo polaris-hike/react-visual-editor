@@ -1,4 +1,3 @@
-import { ReactComponentElement } from "react";
 
 export interface ReactVisualEditorBlock {
     componentKey: string;
@@ -6,6 +5,9 @@ export interface ReactVisualEditorBlock {
     left: number;
     adjustPosition:boolean;
     focus: boolean;
+    zIndex: number,
+    props?: Record<string, any>,
+    model?: Record<string, string>,
 }
 
 export interface ReactVisualEditorValue {
@@ -29,7 +31,8 @@ export function createVisualBlock({top,left,component}:{top:number,left:number,c
         left,
         top,
         adjustPosition: true,
-        focus: false
+        focus: false,
+        zIndex: 0,
     }
 }
 
