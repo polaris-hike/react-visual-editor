@@ -9,7 +9,7 @@ export interface CommandExecute {
 
 interface Command {
     name: string;
-    keyboard: string | string[];
+    keyboard?: string | string[];
     execute: (...args: any[]) => CommandExecute;
     followQueue?: boolean;                                          // 命令执行完毕后，是否需要将命令执行得到的undo redo 存入命令队列
     init?: () => ((() => void) | undefined), 
@@ -28,7 +28,7 @@ export function useCommander() {
         const commandRef = useRef(command);
         commandRef.current = command;
 
-        useEffect(() => {
+        useState(() => {
             if (state.commands[command.name]) {
                 const existsIndex = state.commandArray.findIndex(item=>item.current.name === command.name);
                 state.commandArray.splice(existsIndex,1)
@@ -48,7 +48,7 @@ export function useCommander() {
                 queue.push({undo,redo});
                 state.current = current + 1;
             }
-        },[])
+        })
     },[]);
 
     const [keyboardEvent] = useState(() => {
@@ -80,7 +80,7 @@ export function useCommander() {
 
     const useInit = useCallback(() => {
         useState(() => {
-            state.commandArray.forEach(command => !!command.current.init && state.destroyList.push(command.current.init()));
+            state.commandArray.forEach(command =>!!command.current.init && state.destroyList.push(command.current.init()));
             state.destroyList.push(keyboardEvent.init());
         });
 

@@ -1,5 +1,6 @@
 import { ReactComponentElement, useMemo, useRef, useState } from 'react';
 import { useCallbackRef } from './hooks/useCallbackRef';
+import { createEvent } from './plugins/event';
 import { ReactVisualBlock } from './ReactVisualBlock';
 import { useVisualCommand } from './ReactVisualEditor.command';
 import './ReactVisualEditor.scss';
@@ -13,6 +14,8 @@ const ReactVisualEditor: React.FC<{
   const { value, config } = props;
   const [preview, setPreview] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [dragstart] = useState(() => createEvent())
+  const [dragend] = useState(() => createEvent())
 
   const containerStyle = useMemo(() => {
     return {
@@ -34,6 +37,7 @@ const ReactVisualEditor: React.FC<{
         containerRef.current.addEventListener('dragleave', container.dragleave);
         containerRef.current.addEventListener('drop', container.drop);
         dragData.current.dragComponent = dragComponent;
+        dragstart.emit();
       }),
       dragend: useCallbackRef((e: React.DragEvent<HTMLDivElement>) => {
         containerRef.current.removeEventListener('dragenter', container.dragenter);
@@ -55,18 +59,15 @@ const ReactVisualEditor: React.FC<{
         e.dataTransfer!.dropEffect = 'none';
       }),
       drop: useCallbackRef((e: DragEvent) => {
-        props.onChange({
-          ...props.value,
-          blocks: [
-            ...props.value.blocks,
-            createVisualBlock({
-              top: e.offsetY,
-              left: e.offsetX,
-              component: dragData.current.dragComponent!,
-            })
-          ]
-        })
-        console.log('drop')
+        blockChoseMethods.updateBlocks([
+          ...props.value.blocks,
+          createVisualBlock({
+            top: e.offsetY,
+            left: e.offsetX,
+            component: dragData.current.dragComponent!,
+          })
+        ]);
+        setTimeout(dragend.emit);
       }),
     }
     return { block }
@@ -164,7 +165,9 @@ const ReactVisualEditor: React.FC<{
   const commander = useVisualCommand({
     value,
     updateBlocks: blockChoseMethods.updateBlocks,
-    focusData
+    focusData,
+    dragstart,
+    dragend
   })
 
   const buttons: {
