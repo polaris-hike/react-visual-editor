@@ -8,6 +8,7 @@ import { ReactVisualBlock } from './ReactVisualBlock';
 import { useVisualCommand } from './ReactVisualEditor.command';
 import './ReactVisualEditor.scss';
 import { createVisualBlock, ReactVisualConfig, ReactVisualEditorBlock, ReactVisualEditorComponent, ReactVisualEditorValue } from './ReactVisualEditor.utils';
+import { $$dropdown, DropdownItem } from './service/dropdown';
 
 const ReactVisualEditor: React.FC<{
   value: ReactVisualEditorValue,
@@ -135,8 +136,9 @@ const ReactVisualEditor: React.FC<{
   const focusHandler = (() => {
     const mouseDownBlock = (e: React.MouseEvent<HTMLDivElement>, block: ReactVisualEditorBlock) => {
       if (preview) return;
-      e.stopPropagation();
-      e.preventDefault();
+      if (e.button === 2) return;
+      // e.stopPropagation();
+      // e.preventDefault();
       if (e.ctrlKey) {
         /*如果摁住了ctrl键，如果此时没有选中的block，就选中这个block，否则令这个block的选中状态取反*/
         if (focusData.focus.length <= 1) {
@@ -156,6 +158,10 @@ const ReactVisualEditor: React.FC<{
     };
     const mouseDownContainer = (e: React.MouseEvent<HTMLDivElement>) => {
       if (preview) return;
+      e.preventDefault()
+      if (e.currentTarget !== e.target) {
+          return
+      }
       if (!e.shiftKey) { blockChoseMethods.clearFocus(); }
     };
     return { mouseDownBlock, mouseDownContainer };
@@ -176,7 +182,25 @@ const ReactVisualEditor: React.FC<{
     clearFocus: (external?: ReactVisualEditorBlock) => {
       (!!external ? focusData.focus.filter(item => item !== external) : focusData.focus).forEach(block => block.focus = false);
       blockChoseMethods.updateBlocks(props.value.blocks);
-    }
+    },
+    showBlockData: (block: ReactVisualEditorBlock) => {
+      $$dialog.textarea(JSON.stringify(block), {editReadonly: true, title: '导出的JSON数据'});
+    },
+    importBlockData: async (block: ReactVisualEditorBlock) => {
+      const text = await $$dialog.textarea('', {title: '请输入导入的节点内容'})
+      try {
+        const data = JSON.parse(text || '');
+        console.log(data)
+        console.log(block)
+        commander.updateBlock(data,block);
+      } catch (e) {
+        console.error(e)
+        notification.open({
+          message: '导入失败！',
+          description: '导入的数据格式不正常，请检查！'
+        })
+      }
+    },
   };
 
   const commander = useVisualCommand({
@@ -187,6 +211,26 @@ const ReactVisualEditor: React.FC<{
     dragend,
     onChange: onChange,
   })
+
+  const handler = {
+    onContextMenuBlock: (e:React.MouseEvent<HTMLDivElement>, block: ReactVisualEditorBlock) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      $$dropdown({
+        reference:e.nativeEvent,
+        render: () => (
+          <>
+            <DropdownItem icon="icon-place-top" onClick={commander.placeTop}>置顶节点</DropdownItem>
+            <DropdownItem icon="icon-place-bottom"  onClick={commander.placeBottom}>置底节点</DropdownItem>
+            <DropdownItem icon="icon-delete" onClick={commander.delete}>删除节点</DropdownItem>
+            <DropdownItem icon="icon-browse" onClick={() =>blockChoseMethods.showBlockData(block)}>查看数据</DropdownItem>
+            <DropdownItem icon="icon-import" onClick={() =>blockChoseMethods.importBlockData(block)}>导入数据</DropdownItem>
+          </>
+        )
+      })
+    }
+  }
 
   const buttons: {
     label: string | (() => string),
@@ -275,7 +319,7 @@ const ReactVisualEditor: React.FC<{
         <div className='react-visual-editor-container' onMouseDown={focusHandler.mouseDownContainer} ref={containerRef} style={containerStyle}>
           {
             value.blocks.map((block, index) => (
-              <ReactVisualBlock key={index} block={block} onMouseDown={e => focusHandler.mouseDownBlock(e, block)} config={config} />
+              <ReactVisualBlock key={index} block={block} onContextMenu={(e) => handler.onContextMenuBlock(e,block)} onMouseDown={e => focusHandler.mouseDownBlock(e, block)} config={config} />
             ))
           }
         </div>

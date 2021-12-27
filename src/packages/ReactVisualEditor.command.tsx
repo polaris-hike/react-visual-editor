@@ -147,19 +147,37 @@ export function useVisualCommand(
     commander.useRegistry({
         name: 'updateValue',
         execute: (newModelValue: ReactVisualEditorValue) => {
-            let before: undefined | ReactVisualEditorValue = undefined
-            let after: undefined | ReactVisualEditorValue = undefined
+            const before = deepcopy(value);
+            const after = deepcopy(newModelValue);
+            return {
+                redo: () => onChange(before),
+                undo: () => onChange(after)
+            }
+        },
+    });
+
+    commander.useRegistry({
+        name: 'updateBlock',
+        execute: (newBlock: ReactVisualEditorBlock, oldBlock: ReactVisualEditorBlock) => {
+            let blocks = deepcopy(value.blocks || [])
+            let data = {
+                before: blocks,
+                after: (() => {
+                    blocks = [...blocks]
+                    const index = value.blocks!.indexOf(oldBlock)
+                    if (index > -1) {
+                        blocks.splice(index, 1, newBlock)
+                    }
+                    return deepcopy(blocks)
+                })(),
+            }
             return {
                 redo: () => {
-                    if (!before && !after) {
-                        before = deepcopy(value)
-                        onChange(deepcopy(newModelValue))
-                        after = deepcopy(newModelValue)
-                    } else {
-                        onChange(deepcopy(after!))
-                    }
+                    updateBlocks(deepcopy(data.after))
                 },
-                undo: () => onChange(deepcopy(before!)),
+                undo: () => {
+                    updateBlocks(deepcopy(data.before))
+                },
             }
         },
     });
@@ -212,7 +230,7 @@ export function useVisualCommand(
         placeTop: () => commander.state.commands.placeTop(),
         placeBottom: () => commander.state.commands.placeBottom(),
         clear: () => commander.state.commands.clear(),
-        updateValue: (newModelValue: VisualEditorValue) => commander.state.commands.updateValue(newModelValue),
-        updateBlock: (newBlock: VisualEditorBlock, oldBlock: VisualEditorBlock) => commander.state.commands.updateBlock(newBlock, oldBlock),
+        updateValue: (newModelValue: ReactVisualEditorValue) => commander.state.commands.updateValue(newModelValue),
+        updateBlock: (newBlock: ReactVisualEditorBlock, oldBlock: ReactVisualEditorBlock) => commander.state.commands.updateBlock(newBlock, oldBlock),
     }
 }

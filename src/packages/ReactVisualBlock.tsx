@@ -7,7 +7,8 @@ import { ReactVisualConfig, ReactVisualEditorBlock } from './ReactVisualEditor.u
 export const ReactVisualBlock: React.FC<{
     block: ReactVisualEditorBlock,
     config: ReactVisualConfig,
-    onMouseDown?:(e:React.MouseEvent<HTMLDivElement>)=>void
+    onMouseDown?: (e:React.MouseEvent<HTMLDivElement>)=>void,
+    onContextMenu?: (e:React.MouseEvent<HTMLDivElement>)=>void,
 }> = (props) => {
     const { config,block } = props;
     const component = config.componentMap[block.componentKey];
@@ -38,7 +39,7 @@ export const ReactVisualBlock: React.FC<{
         }
       }, []);
     return (
-        <div className={classes} onMouseDown={props.onMouseDown} ref={elRef} style={blockStyle}>
+        <div className={classes} onMouseDown={props.onMouseDown} onContextMenu={props.onContextMenu} ref={elRef} style={blockStyle}>
             {component.preview()}
         </div>
     )
