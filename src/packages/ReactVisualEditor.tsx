@@ -3,7 +3,7 @@ import classnames from 'classnames';
 import { useMemo, useRef, useState } from 'react';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { createEvent } from './plugins/event';
-import {$$dialog} from "./service/dialog";
+import { $$dialog } from "./service/dialog";
 import { ReactVisualBlock } from './ReactVisualBlock';
 import { useVisualCommand } from './ReactVisualEditor.command';
 import './ReactVisualEditor.scss';
@@ -31,7 +31,7 @@ const ReactVisualEditor: React.FC<{
   const classes = useMemo(() => classnames([
     'react-visual-editor',
     preview && 'react-visual-editor-preview',
-]), [preview])
+  ]), [preview])
 
   const containerRef = useRef({} as HTMLDivElement);
 
@@ -83,47 +83,111 @@ const ReactVisualEditor: React.FC<{
   })();
 
   const blockDraggier = (() => {
+    const [mark,setMark] = useState({x:null as null | number,y: null as null | number});
+
     const dragData = useRef({
       startX: 0,                                             // 拖拽开始时，鼠标的left
       startY: 0,                                             // 拖拽开始时，鼠标的top
+      startLeft: 0,  
+      startTop: 0,
       startPosArray: [] as { top: number, left: number }[],   // 拖拽开始时， 所有选中的block元素的top，left值
       dragging: false,
+      markLines: {
+        x: [] as {left: number, showLeft: number}[],
+        y: [] as {top: number, showTop: number}[],
+      }
     })
 
-    const mousedown = useCallbackRef((e: React.MouseEvent<HTMLDivElement>) => {
+    const mousedown = useCallbackRef((e: React.MouseEvent<HTMLDivElement>,block:ReactVisualEditorBlock) => {
       document.addEventListener('mousemove', mousemove);
       document.addEventListener('mouseup', mouseup);
       dragData.current = {
         startX: e.clientX,
         startY: e.clientY,
+        startLeft: block.left,
+        startTop: block.top,
         startPosArray: focusData.focus.map(({ top, left }) => ({ top, left })),
         dragging: false,
+        markLines: (() => {
+          const x = [] as {left: number, showLeft: number}[];
+          const y = [] as {top: number, showTop: number}[];
+          const { unFocus } = focusData;
+          unFocus.forEach((item) => {
+            y.push({top:item.top,showTop:item.top});                                                             //顶对顶
+            y.push({top:item.top + item.height / 2 - block.height / 2 ,showTop:item.top + item.height / 2});     //中对中
+            y.push({top:item.top + item.height - block.height,showTop:item.top + item.height});                  //底对底
+            y.push({top:item.top - block.height,showTop:item.top});                                              //底对顶
+            y.push({top:item.top + item.height,showTop:item.top + item.height});                                 //顶对底
+
+            x.push({left:item.left,showLeft:item.left});                                                         //左对左
+            x.push({left:item.left + item.width / 2 - block.width / 2 ,showLeft:item.left + item.width / 2});    //中对中
+            x.push({left:item.left + item.width - block.width,showLeft:item.left + item.width});                 //右对右
+            x.push({left:item.top - block.width,showLeft:item.left});                                            //右对左
+            x.push({left:item.left + item.width,showLeft:item.left + item.width});                               //左对右
+          }) 
+
+          return {x,y}
+        })()
       }
     });
     const mousemove = useCallbackRef((e: MouseEvent) => {
       if (!dragData.current.dragging) {
         dragData.current.dragging = true;
         dragstart.emit();
-      };  
-      const { startX, startY, startPosArray } = dragData.current;
-      const { clientX: moveX, clientY: moveY } = e;
+      };
+      const { startX, startY, startPosArray, markLines, startTop, startLeft } = dragData.current;
+      let { clientX: moveX, clientY: moveY } = e;
+
+      if (e.shiftKey) {
+        if (Math.abs(moveX - startX) > Math.abs(moveY - startY)) {
+            moveY = startY;
+        } else {
+            moveX = startX;
+        }
+      }
+
+      const now = {
+        mark: {
+          x: null as null | number,
+          y: null as null | number,
+        },
+        top: startTop + moveY - startY,
+        left: startLeft + moveX - startX,
+      };
+
+      for (let i = 0; i < markLines.y.length; i++) {
+        const { top, showTop, } = markLines.y[i];
+        const { left, showLeft, } = markLines.x[i];
+        if (Math.abs(now.top - top) < 5) {
+          moveY = top + startY - startTop;
+          now.mark.y = showTop;
+        }
+        if (Math.abs(now.left - left) < 5) {
+          moveX = left + startX - startLeft;
+          now.mark.x = showLeft;
+        }
+      }
+
+
       const durX = moveX - startX, durY = moveY - startY;
       focusData.focus.forEach((block, index) => {
         const { left, top } = startPosArray[index]
         block.top = top + durY;
         block.left = left + durX;
-        blockChoseMethods.updateBlocks(props.value.blocks)
       });
+      blockChoseMethods.updateBlocks(props.value.blocks)
+      setMark(now.mark)
     });
     const mouseup = useCallbackRef((e: MouseEvent) => {
       document.removeEventListener('mousemove', mousemove);
       document.removeEventListener('mouseup', mouseup);
+      setMark({x: null,y:null})
       if (dragData.current.dragging) {
         dragend.emit();
       }
     });
 
-    return { mousedown, mousemove, mouseup }
+    return { mousedown, mark }
   })();
 
   const focusData = useMemo(() => {
@@ -154,13 +218,13 @@ const ReactVisualEditor: React.FC<{
           blockChoseMethods.clearFocus(block);
         }
       }
-      setTimeout(() => blockDraggier.mousedown(e))
+      setTimeout(() => blockDraggier.mousedown(e,block))
     };
     const mouseDownContainer = (e: React.MouseEvent<HTMLDivElement>) => {
       if (preview) return;
       e.preventDefault()
       if (e.currentTarget !== e.target) {
-          return
+        return
       }
       if (!e.shiftKey) { blockChoseMethods.clearFocus(); }
     };
@@ -184,15 +248,15 @@ const ReactVisualEditor: React.FC<{
       blockChoseMethods.updateBlocks(props.value.blocks);
     },
     showBlockData: (block: ReactVisualEditorBlock) => {
-      $$dialog.textarea(JSON.stringify(block), {editReadonly: true, title: '导出的JSON数据'});
+      $$dialog.textarea(JSON.stringify(block), { editReadonly: true, title: '导出的JSON数据' });
     },
     importBlockData: async (block: ReactVisualEditorBlock) => {
-      const text = await $$dialog.textarea('', {title: '请输入导入的节点内容'})
+      const text = await $$dialog.textarea('', { title: '请输入导入的节点内容' })
       try {
         const data = JSON.parse(text || '');
         console.log(data)
         console.log(block)
-        commander.updateBlock(data,block);
+        commander.updateBlock(data, block);
       } catch (e) {
         console.error(e)
         notification.open({
@@ -213,19 +277,19 @@ const ReactVisualEditor: React.FC<{
   })
 
   const handler = {
-    onContextMenuBlock: (e:React.MouseEvent<HTMLDivElement>, block: ReactVisualEditorBlock) => {
+    onContextMenuBlock: (e: React.MouseEvent<HTMLDivElement>, block: ReactVisualEditorBlock) => {
       e.preventDefault();
       e.stopPropagation();
 
       $$dropdown({
-        reference:e.nativeEvent,
+        reference: e.nativeEvent,
         render: () => (
           <>
             <DropdownItem icon="icon-place-top" onClick={commander.placeTop}>置顶节点</DropdownItem>
-            <DropdownItem icon="icon-place-bottom"  onClick={commander.placeBottom}>置底节点</DropdownItem>
+            <DropdownItem icon="icon-place-bottom" onClick={commander.placeBottom}>置底节点</DropdownItem>
             <DropdownItem icon="icon-delete" onClick={commander.delete}>删除节点</DropdownItem>
-            <DropdownItem icon="icon-browse" onClick={() =>blockChoseMethods.showBlockData(block)}>查看数据</DropdownItem>
-            <DropdownItem icon="icon-import" onClick={() =>blockChoseMethods.importBlockData(block)}>导入数据</DropdownItem>
+            <DropdownItem icon="icon-browse" onClick={() => blockChoseMethods.showBlockData(block)}>查看数据</DropdownItem>
+            <DropdownItem icon="icon-import" onClick={() => blockChoseMethods.importBlockData(block)}>导入数据</DropdownItem>
           </>
         )
       })
@@ -239,7 +303,7 @@ const ReactVisualEditor: React.FC<{
     handler: () => void,
   }[] = [
       { label: '撤销', icon: 'icon-back', handler: () => commander.undo(), tip: 'ctrl+z' },
-      { label: '重做', icon: 'icon-forward', handler: () => commander.redo() , tip: 'ctrl+y, ctrl+shift+z' },
+      { label: '重做', icon: 'icon-forward', handler: () => commander.redo(), tip: 'ctrl+y, ctrl+shift+z' },
       {
         label: () => preview ? '编辑' : '预览',
         icon: () => preview ? 'icon-edit' : 'icon-browse',
@@ -252,7 +316,7 @@ const ReactVisualEditor: React.FC<{
       },
       {
         label: '导入', icon: 'icon-import', handler: async () => {
-          const text = await $$dialog.textarea('', {title: '请输入导入的JSON字符串'})
+          const text = await $$dialog.textarea('', { title: '请输入导入的JSON字符串' })
           try {
             const data = JSON.parse(text || '')
             commander.updateValue(data);
@@ -268,12 +332,12 @@ const ReactVisualEditor: React.FC<{
       {
         label: '导出',
         icon: 'icon-export',
-        handler: () => $$dialog.textarea(JSON.stringify(props.value), {editReadonly: true, title: '导出的JSON数据'})
-    },
-      {label: '置顶', icon: 'icon-place-top', handler: () => commander.placeTop(), tip: 'ctrl+up'},
-      {label: '置底', icon: 'icon-place-bottom', handler: () => commander.placeBottom(), tip: 'ctrl+down'},
-      { label: '删除', icon: 'icon-delete', handler: () => commander.delete() , tip: 'ctrl+d, backspace, delete' },
-      { label: '清空', icon: 'icon-reset', handler: () => commander.clear() , },
+        handler: () => $$dialog.textarea(JSON.stringify(props.value), { editReadonly: true, title: '导出的JSON数据' })
+      },
+      { label: '置顶', icon: 'icon-place-top', handler: () => commander.placeTop(), tip: 'ctrl+up' },
+      { label: '置底', icon: 'icon-place-bottom', handler: () => commander.placeBottom(), tip: 'ctrl+down' },
+      { label: '删除', icon: 'icon-delete', handler: () => commander.delete(), tip: 'ctrl+d, backspace, delete' },
+      { label: '清空', icon: 'icon-reset', handler: () => commander.clear(), },
       {
         label: '关闭', icon: 'icon-close', handler: () => {
           blockChoseMethods.clearFocus()
@@ -319,9 +383,11 @@ const ReactVisualEditor: React.FC<{
         <div className='react-visual-editor-container' onMouseDown={focusHandler.mouseDownContainer} ref={containerRef} style={containerStyle}>
           {
             value.blocks.map((block, index) => (
-              <ReactVisualBlock key={index} block={block} onContextMenu={(e) => handler.onContextMenuBlock(e,block)} onMouseDown={e => focusHandler.mouseDownBlock(e, block)} config={config} />
+              <ReactVisualBlock key={index} block={block} onContextMenu={(e) => handler.onContextMenuBlock(e, block)} onMouseDown={e => focusHandler.mouseDownBlock(e, block)} config={config} />
             ))
           }
+          {blockDraggier.mark.x !== null &&<div className="react-visual-editor-mark-x" style={{left:`${blockDraggier.mark.x}px`}}></div>}
+          {blockDraggier.mark.y !== null &&<div className="react-visual-editor-mark-y" style={{top:`${blockDraggier.mark.y}px`}}></div>}
         </div>
       </section>
     </div>

@@ -3,6 +3,8 @@ export interface ReactVisualEditorBlock {
     componentKey: string;
     top: number;
     left: number;
+    width: number;
+    height: number;
     adjustPosition:boolean;
     focus: boolean;
     zIndex: number,
@@ -30,6 +32,8 @@ export function createVisualBlock({top,left,component}:{top:number,left:number,c
         componentKey:component.key,
         left,
         top,
+        width: 0,
+        height: 0,
         adjustPosition: true,
         focus: false,
         zIndex: 0,
