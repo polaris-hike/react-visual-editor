@@ -40,9 +40,31 @@ export const ReactVisualBlock: React.FC<{
           forceUpdate();
         }
       }, []);
+
+      let render:any;
+      if (!!component) {
+        render = component.render({
+          size: props.block.hasResize && component.resize ? (()=>{
+            let styles = {
+              width: undefined as undefined | string,
+              height: undefined as undefined | string
+            }
+            !!component.resize.width && (styles.width = `${props.block.width}px`);
+            !!component.resize.height && (styles.height = `${props.block.height}px`);
+            return styles;
+          })() : {
+            
+              width: block.width +'px',
+              height: block.height +'px'
+            
+          }
+        })
+      }
+
     return (
         <div className={classes} onMouseDown={props.onMouseDown} onContextMenu={props.onContextMenu} ref={elRef} style={blockStyle}>
-            {component.preview()}
+            {render}
+            {props.children}
         </div>
     )
 }

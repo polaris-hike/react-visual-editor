@@ -10,6 +10,7 @@ export interface ReactVisualEditorBlock {
     zIndex: number,
     props?: Record<string, any>,
     model?: Record<string, string>,
+    hasResize: boolean;
 }
 
 export interface ReactVisualEditorValue {
@@ -24,7 +25,11 @@ export interface ReactVisualEditorComponent {
     key: string;
     name: string;
     preview: () => JSX.Element;
-    render: () => JSX.Element;
+    render: (data:{size:{height?:string,width?:string}}) => JSX.Element;  
+    resize?: {
+        width?: boolean; 
+        height?: boolean;
+    }
 }
 
 export function createVisualBlock({top,left,component}:{top:number,left:number,component:ReactVisualEditorComponent}):ReactVisualEditorBlock {
@@ -37,6 +42,7 @@ export function createVisualBlock({top,left,component}:{top:number,left:number,c
         adjustPosition: true,
         focus: false,
         zIndex: 0,
+        hasResize: false
     }
 }
 

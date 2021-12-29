@@ -9,6 +9,7 @@ import { useVisualCommand } from './ReactVisualEditor.command';
 import './ReactVisualEditor.scss';
 import { createVisualBlock, ReactVisualConfig, ReactVisualEditorBlock, ReactVisualEditorComponent, ReactVisualEditorValue } from './ReactVisualEditor.utils';
 import { $$dropdown, DropdownItem } from './service/dropdown';
+import { BlockResizeDirection, ReactVisualBlockResize } from './components/ReactVisualBlockResize';
 
 const ReactVisualEditor: React.FC<{
   value: ReactVisualEditorValue,
@@ -83,22 +84,22 @@ const ReactVisualEditor: React.FC<{
   })();
 
   const blockDraggier = (() => {
-    const [mark,setMark] = useState({x:null as null | number,y: null as null | number});
+    const [mark, setMark] = useState({ x: null as null | number, y: null as null | number });
 
     const dragData = useRef({
       startX: 0,                                             // 拖拽开始时，鼠标的left
       startY: 0,                                             // 拖拽开始时，鼠标的top
-      startLeft: 0,  
+      startLeft: 0,
       startTop: 0,
       startPosArray: [] as { top: number, left: number }[],   // 拖拽开始时， 所有选中的block元素的top，left值
       dragging: false,
       markLines: {
-        x: [] as {left: number, showLeft: number}[],
-        y: [] as {top: number, showTop: number}[],
+        x: [] as { left: number, showLeft: number }[],
+        y: [] as { top: number, showTop: number }[],
       }
     })
 
-    const mousedown = useCallbackRef((e: React.MouseEvent<HTMLDivElement>,block:ReactVisualEditorBlock) => {
+    const mousedown = useCallbackRef((e: React.MouseEvent<HTMLDivElement>, block: ReactVisualEditorBlock) => {
       document.addEventListener('mousemove', mousemove);
       document.addEventListener('mouseup', mouseup);
       dragData.current = {
@@ -109,24 +110,24 @@ const ReactVisualEditor: React.FC<{
         startPosArray: focusData.focus.map(({ top, left }) => ({ top, left })),
         dragging: false,
         markLines: (() => {
-          const x = [] as {left: number, showLeft: number}[];
-          const y = [] as {top: number, showTop: number}[];
+          const x = [] as { left: number, showLeft: number }[];
+          const y = [] as { top: number, showTop: number }[];
           const { unFocus } = focusData;
           unFocus.forEach((item) => {
-            y.push({top:item.top,showTop:item.top});                                                             //顶对顶
-            y.push({top:item.top + item.height / 2 - block.height / 2 ,showTop:item.top + item.height / 2});     //中对中
-            y.push({top:item.top + item.height - block.height,showTop:item.top + item.height});                  //底对底
-            y.push({top:item.top - block.height,showTop:item.top});                                              //底对顶
-            y.push({top:item.top + item.height,showTop:item.top + item.height});                                 //顶对底
+            y.push({ top: item.top, showTop: item.top });                                                             //顶对顶
+            y.push({ top: item.top + item.height / 2 - block.height / 2, showTop: item.top + item.height / 2 });     //中对中
+            y.push({ top: item.top + item.height - block.height, showTop: item.top + item.height });                  //底对底
+            y.push({ top: item.top - block.height, showTop: item.top });                                              //底对顶
+            y.push({ top: item.top + item.height, showTop: item.top + item.height });                                 //顶对底
 
-            x.push({left:item.left,showLeft:item.left});                                                         //左对左
-            x.push({left:item.left + item.width / 2 - block.width / 2 ,showLeft:item.left + item.width / 2});    //中对中
-            x.push({left:item.left + item.width - block.width,showLeft:item.left + item.width});                 //右对右
-            x.push({left:item.top - block.width,showLeft:item.left});                                            //右对左
-            x.push({left:item.left + item.width,showLeft:item.left + item.width});                               //左对右
-          }) 
+            x.push({ left: item.left, showLeft: item.left });                                                         //左对左
+            x.push({ left: item.left + item.width / 2 - block.width / 2, showLeft: item.left + item.width / 2 });    //中对中
+            x.push({ left: item.left + item.width - block.width, showLeft: item.left + item.width });                 //右对右
+            x.push({ left: item.top - block.width, showLeft: item.left });                                            //右对左
+            x.push({ left: item.left + item.width, showLeft: item.left + item.width });                               //左对右
+          })
 
-          return {x,y}
+          return { x, y }
         })()
       }
     });
@@ -140,9 +141,9 @@ const ReactVisualEditor: React.FC<{
 
       if (e.shiftKey) {
         if (Math.abs(moveX - startX) > Math.abs(moveY - startY)) {
-            moveY = startY;
+          moveY = startY;
         } else {
-            moveX = startX;
+          moveX = startX;
         }
       }
 
@@ -181,7 +182,7 @@ const ReactVisualEditor: React.FC<{
     const mouseup = useCallbackRef((e: MouseEvent) => {
       document.removeEventListener('mousemove', mousemove);
       document.removeEventListener('mouseup', mouseup);
-      setMark({x: null,y:null})
+      setMark({ x: null, y: null })
       if (dragData.current.dragging) {
         dragend.emit();
       }
@@ -189,6 +190,84 @@ const ReactVisualEditor: React.FC<{
 
     return { mousedown, mark }
   })();
+
+  const resizeDraggier = (() => {
+
+    const dragData = useRef({
+        startX: 0,
+        startY: 0,
+        startWidth: 0,
+        startHeight: 0,
+        startLeft: 0,
+        startTop: 0,
+        dragging: false,
+        direction: {
+            horizontal: BlockResizeDirection.start,
+            vertical: BlockResizeDirection.start,
+        },
+        block: null as null | ReactVisualEditorBlock,
+    })
+
+    const mousedown = useCallbackRef((e: React.MouseEvent<HTMLDivElement>, direction: { horizontal: BlockResizeDirection, vertical: BlockResizeDirection }, block: ReactVisualEditorBlock) => {
+      e.stopPropagation();
+        document.body.addEventListener('mousemove', mousemove)
+        document.body.addEventListener('mouseup', mouseup)
+        dragData.current = {
+            startX: e.clientX,
+            startY: e.clientY,
+            startWidth: block.width,
+            startHeight: block.height,
+            startLeft: block.left,
+            startTop: block.top,
+            dragging: false,
+            direction,
+            block,
+        }
+    })
+    const mousemove = useCallbackRef((e: MouseEvent) => {
+        let {startX, startY, startWidth, startHeight, direction, startLeft, startTop, dragging, block} = dragData.current
+        if (!dragging) {
+            dragData.current.dragging = true
+            dragstart.emit()
+        }
+        let {clientX: moveX, clientY: moveY} = e
+        if (direction.horizontal === BlockResizeDirection.center) {
+            moveX = startX
+        }
+        if (direction.vertical === BlockResizeDirection.center) {
+            moveY = startY
+        }
+        let durX = moveX - startX
+        let durY = moveY - startY
+
+        if (direction.vertical === BlockResizeDirection.start) {
+            durY = -durY
+            block!.top = startTop - durY
+        }
+        if (direction.horizontal === BlockResizeDirection.start) {
+            durX = -durX
+            block!.left = startLeft - durX
+        }
+
+        const width = startWidth + durX
+        const height = startHeight + durY
+        block!.width = width
+        block!.height = height
+        block!.hasResize = true
+        blockChoseMethods.updateBlocks(props.value.blocks)
+    })
+    const mouseup = useCallbackRef((e: MouseEvent) => {
+        document.body.removeEventListener('mousemove', mousemove)
+        document.body.removeEventListener('mouseup', mouseup)
+        if (dragData.current.dragging) {
+            dragend.emit()
+        }
+    })
+
+    return {
+        mousedown,
+    }
+})();
 
   const focusData = useMemo(() => {
     const focus: ReactVisualEditorBlock[] = [];
@@ -218,7 +297,7 @@ const ReactVisualEditor: React.FC<{
           blockChoseMethods.clearFocus(block);
         }
       }
-      setTimeout(() => blockDraggier.mousedown(e,block))
+      setTimeout(() => blockDraggier.mousedown(e, block))
     };
     const mouseDownContainer = (e: React.MouseEvent<HTMLDivElement>) => {
       if (preview) return;
@@ -383,11 +462,16 @@ const ReactVisualEditor: React.FC<{
         <div className='react-visual-editor-container' onMouseDown={focusHandler.mouseDownContainer} ref={containerRef} style={containerStyle}>
           {
             value.blocks.map((block, index) => (
-              <ReactVisualBlock key={index} block={block} onContextMenu={(e) => handler.onContextMenuBlock(e, block)} onMouseDown={e => focusHandler.mouseDownBlock(e, block)} config={config} />
+              <ReactVisualBlock key={index} block={block} onContextMenu={(e) => handler.onContextMenuBlock(e, block)} onMouseDown={e => focusHandler.mouseDownBlock(e, block)} config={config} >
+                { block.focus &&
+                !!config.componentMap[block.componentKey] && !!config.componentMap[block.componentKey].resize
+                && (config.componentMap[block.componentKey].resize?.width || config.componentMap[block.componentKey].resize?.height) &&
+                 <ReactVisualBlockResize onMouseDown={(e,direction) => resizeDraggier.mousedown(e,direction,block)} component={config.componentMap[block.componentKey]} block={block} />}
+              </ReactVisualBlock>
             ))
           }
-          {blockDraggier.mark.x !== null &&<div className="react-visual-editor-mark-x" style={{left:`${blockDraggier.mark.x}px`}}></div>}
-          {blockDraggier.mark.y !== null &&<div className="react-visual-editor-mark-y" style={{top:`${blockDraggier.mark.y}px`}}></div>}
+          {blockDraggier.mark.x !== null && <div className="react-visual-editor-mark-x" style={{ left: `${blockDraggier.mark.x}px` }}></div>}
+          {blockDraggier.mark.y !== null && <div className="react-visual-editor-mark-y" style={{ top: `${blockDraggier.mark.y}px` }}></div>}
         </div>
       </section>
     </div>
