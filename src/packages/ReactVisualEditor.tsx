@@ -36,6 +36,8 @@ const ReactVisualEditor: React.FC<{
 
   const containerRef = useRef({} as HTMLDivElement);
 
+  const bodyRef = useRef({} as HTMLDivElement);
+
   const menuDraggier = (() => {
     const dragData = useRef({
       dragComponent: null as null | ReactVisualEditorComponent
@@ -96,12 +98,20 @@ const ReactVisualEditor: React.FC<{
       markLines: {
         x: [] as { left: number, showLeft: number }[],
         y: [] as { top: number, showTop: number }[],
-      }
+      },
+      body: {
+        startScrollTop:0,
+        moveScrollTop: 0
+      },
+      moveX: 0,
+      moveY: 0,
+      shiftKey: false,
     })
 
     const mousedown = useCallbackRef((e: React.MouseEvent<HTMLDivElement>, block: ReactVisualEditorBlock) => {
       document.addEventListener('mousemove', mousemove);
       document.addEventListener('mouseup', mouseup);
+      bodyRef.current.addEventListener('scroll',scroll)
       dragData.current = {
         startX: e.clientX,
         startY: e.clientY,
@@ -109,6 +119,13 @@ const ReactVisualEditor: React.FC<{
         startTop: block.top,
         startPosArray: focusData.focus.map(({ top, left }) => ({ top, left })),
         dragging: false,
+        shiftKey: e.shiftKey,
+        moveX: e.clientX,
+        moveY: e.clientY,
+        body: {
+          startScrollTop: bodyRef.current.scrollTop,
+           moveScrollTop: bodyRef.current.scrollTop,
+        },
         markLines: (() => {
           const x = [] as { left: number, showLeft: number }[];
           const y = [] as { top: number, showTop: number }[];
@@ -123,7 +140,7 @@ const ReactVisualEditor: React.FC<{
             x.push({ left: item.left, showLeft: item.left });                                                         //左对左
             x.push({ left: item.left + item.width / 2 - block.width / 2, showLeft: item.left + item.width / 2 });    //中对中
             x.push({ left: item.left + item.width - block.width, showLeft: item.left + item.width });                 //右对右
-            x.push({ left: item.top - block.width, showLeft: item.left });                                            //右对左
+            x.push({ left: item.left - block.width, showLeft: item.left });                                            //右对左
             x.push({ left: item.left + item.width, showLeft: item.left + item.width });                               //左对右
           })
 
@@ -131,15 +148,15 @@ const ReactVisualEditor: React.FC<{
         })()
       }
     });
-    const mousemove = useCallbackRef((e: MouseEvent) => {
+    const handleMove = useCallbackRef(() => {
       if (!dragData.current.dragging) {
         dragData.current.dragging = true;
         dragstart.emit();
       };
-      const { startX, startY, startPosArray, markLines, startTop, startLeft } = dragData.current;
-      let { clientX: moveX, clientY: moveY } = e;
+      let { startX, startY, startPosArray, markLines, startTop, startLeft,moveX,moveY,body,shiftKey } = dragData.current;
+      moveY += body.moveScrollTop - body.startScrollTop
 
-      if (e.shiftKey) {
+      if (shiftKey) {
         if (Math.abs(moveX - startX) > Math.abs(moveY - startY)) {
           moveY = startY;
         } else {
@@ -179,20 +196,30 @@ const ReactVisualEditor: React.FC<{
       blockChoseMethods.updateBlocks(props.value.blocks)
       setMark(now.mark)
     });
+    const mousemove = useCallbackRef((e: MouseEvent) => {
+      dragData.current.moveX = e.clientX;
+      dragData.current.moveY = e.clientY;
+      handleMove();
+    });
     const mouseup = useCallbackRef((e: MouseEvent) => {
       document.removeEventListener('mousemove', mousemove);
       document.removeEventListener('mouseup', mouseup);
+      bodyRef.current.removeEventListener('scroll',scroll)
       setMark({ x: null, y: null })
       if (dragData.current.dragging) {
         dragend.emit();
       }
     });
+    const scroll = useCallbackRef((e: Event) => {
+      dragData.current.body.moveScrollTop = (e.target as HTMLDivElement).scrollTop;
+      handleMove();
+    })
 
     return { mousedown, mark }
   })();
 
   const resizeDraggier = (() => {
-
+    
     const dragData = useRef({
         startX: 0,
         startY: 0,
@@ -225,37 +252,37 @@ const ReactVisualEditor: React.FC<{
         }
     })
     const mousemove = useCallbackRef((e: MouseEvent) => {
-        let {startX, startY, startWidth, startHeight, direction, startLeft, startTop, dragging, block} = dragData.current
-        if (!dragging) {
-            dragData.current.dragging = true
-            dragstart.emit()
-        }
-        let {clientX: moveX, clientY: moveY} = e
-        if (direction.horizontal === BlockResizeDirection.center) {
-            moveX = startX
-        }
-        if (direction.vertical === BlockResizeDirection.center) {
-            moveY = startY
-        }
-        let durX = moveX - startX
-        let durY = moveY - startY
+      let {startX, startY, startWidth, startHeight, direction, startLeft, startTop, dragging, block} = dragData.current
+      if (!dragging) {
+          dragData.current.dragging = true
+          dragstart.emit()
+      }
+      let {clientX: moveX, clientY: moveY} = e
+      if (direction.horizontal === BlockResizeDirection.center) {
+          moveX = startX
+      }
+      if (direction.vertical === BlockResizeDirection.center) {
+          moveY = startY
+      }
+      let durX = moveX - startX
+      let durY = moveY - startY
 
-        if (direction.vertical === BlockResizeDirection.start) {
-            durY = -durY
-            block!.top = startTop - durY
-        }
-        if (direction.horizontal === BlockResizeDirection.start) {
-            durX = -durX
-            block!.left = startLeft - durX
-        }
+      if (direction.vertical === BlockResizeDirection.start) {
+          durY = -durY
+          block!.top = startTop - durY
+      }
+      if (direction.horizontal === BlockResizeDirection.start) {
+          durX = -durX
+          block!.left = startLeft - durX
+      }
 
-        const width = startWidth + durX
-        const height = startHeight + durY
-        block!.width = width
-        block!.height = height
-        block!.hasResize = true
-        blockChoseMethods.updateBlocks(props.value.blocks)
-    })
+      const width = startWidth + durX
+      const height = startHeight + durY
+      block!.width = width
+      block!.height = height
+      block!.hasResize = true
+      blockChoseMethods.updateBlocks(props.value.blocks)
+  })
     const mouseup = useCallbackRef((e: MouseEvent) => {
         document.body.removeEventListener('mousemove', mousemove)
         document.body.removeEventListener('mouseup', mouseup)
@@ -458,7 +485,7 @@ const ReactVisualEditor: React.FC<{
         </div>
       </section>
       <section className="react-visual-editor-operator">operator</section>
-      <section className="react-visual-editor-body">
+      <section className="react-visual-editor-body" ref={bodyRef}>
         <div className='react-visual-editor-container' onMouseDown={focusHandler.mouseDownContainer} ref={containerRef} style={containerStyle}>
           {
             value.blocks.map((block, index) => (
