@@ -52,11 +52,9 @@ export const ReactVisualBlock: React.FC<{
             !!component.resize.width && (styles.width = `${props.block.width}px`);
             !!component.resize.height && (styles.height = `${props.block.height}px`);
             return styles;
-          })() : {
-            
+          })() : {           
               width: block.width +'px',
               height: block.height +'px'
-            
           }
         })
       }

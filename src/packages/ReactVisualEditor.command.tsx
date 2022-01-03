@@ -72,20 +72,17 @@ export function useVisualCommand(
         name: 'placeTop',
         keyboard: 'ctrl+up',
         execute: () => {
-            console.log('placeTop')
             let data = {
                 before: deepcopy(value.blocks),
                 after: deepcopy((() => {
                     const {focus, unFocus} = focusData;
                     const maxZIndex = unFocus.reduce((prev, block) => Math.max(prev, block.zIndex), -Infinity) + 1;
-                    console.log(maxZIndex)
                     focus.forEach(block => block.zIndex = maxZIndex);
                     return value.blocks;
                 })()),
             }
             return {
                 redo: () => {
-                    console.log(deepcopy(data.after))
                     updateBlocks(deepcopy(data.after))
                 },
                 undo: () => {
@@ -147,14 +144,22 @@ export function useVisualCommand(
     commander.useRegistry({
         name: 'updateValue',
         execute: (newModelValue: ReactVisualEditorValue) => {
-            const before = deepcopy(value);
-            const after = deepcopy(newModelValue);
+            let before: undefined | ReactVisualEditorValue = undefined
+            let after: undefined | ReactVisualEditorValue = undefined
             return {
-                redo: () => onChange(before),
-                undo: () => onChange(after)
+                redo: () => {
+                    if (!before && !after) {
+                        before = deepcopy(value)
+                        onChange(deepcopy(newModelValue))
+                        after = deepcopy(newModelValue)
+                    } else {
+                        onChange(deepcopy(after!))
+                    }
+                },
+                undo: () => onChange(deepcopy(before!)),
             }
         },
-    });
+    })
 
     commander.useRegistry({
         name: 'updateBlock',
@@ -197,7 +202,6 @@ export function useVisualCommand(
         commander.useRegistry({
             name: 'drag',
             init() {
-                console.log('init')
                 dragData.current = {before: null}
                 dragstart.on(handler.dragstart)
                 dragend.on(handler.dragend)

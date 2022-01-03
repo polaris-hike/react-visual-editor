@@ -10,6 +10,7 @@ import './ReactVisualEditor.scss';
 import { createVisualBlock, ReactVisualConfig, ReactVisualEditorBlock, ReactVisualEditorComponent, ReactVisualEditorValue } from './ReactVisualEditor.utils';
 import { $$dropdown, DropdownItem } from './service/dropdown';
 import { BlockResizeDirection, ReactVisualBlockResize } from './components/ReactVisualBlockResize';
+import ReactVisualEditorOperator from './ReactVisualEditorOperator';
 
 const ReactVisualEditor: React.FC<{
   value: ReactVisualEditorValue,
@@ -19,8 +20,11 @@ const ReactVisualEditor: React.FC<{
   const { value, config, onChange } = props;
   const [preview, setPreview] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [dragstart] = useState(() => createEvent())
-  const [dragend] = useState(() => createEvent())
+  const [selectIndex,setSelectIndex] = useState(-1);
+  const [dragstart] = useState(() => createEvent());
+  const [dragend] = useState(() => createEvent());
+
+  const selectBlock = useMemo(() => value.blocks[selectIndex] as ReactVisualEditorBlock | undefined,[value.blocks,selectIndex])
 
   const containerStyle = useMemo(() => {
     return {
@@ -304,11 +308,9 @@ const ReactVisualEditor: React.FC<{
   }, [props.value.blocks]);
 
   const focusHandler = (() => {
-    const mouseDownBlock = (e: React.MouseEvent<HTMLDivElement>, block: ReactVisualEditorBlock) => {
+    const mouseDownBlock = (e: React.MouseEvent<HTMLDivElement>, block: ReactVisualEditorBlock,index:number) => {
       if (preview) return;
       if (e.button === 2) return;
-      // e.stopPropagation();
-      // e.preventDefault();
       if (e.ctrlKey) {
         /*如果摁住了ctrl键，如果此时没有选中的block，就选中这个block，否则令这个block的选中状态取反*/
         if (focusData.focus.length <= 1) {
@@ -324,6 +326,9 @@ const ReactVisualEditor: React.FC<{
           blockChoseMethods.clearFocus(block);
         }
       }
+
+      setSelectIndex(block.focus ? index : -1);
+
       setTimeout(() => blockDraggier.mousedown(e, block))
     };
     const mouseDownContainer = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -332,7 +337,10 @@ const ReactVisualEditor: React.FC<{
       if (e.currentTarget !== e.target) {
         return
       }
-      if (!e.shiftKey) { blockChoseMethods.clearFocus(); }
+      if (!e.shiftKey) { 
+        blockChoseMethods.clearFocus(); 
+        setSelectIndex(-1);
+      }
     };
     return { mouseDownBlock, mouseDownContainer };
   })();
@@ -360,8 +368,6 @@ const ReactVisualEditor: React.FC<{
       const text = await $$dialog.textarea('', { title: '请输入导入的节点内容' })
       try {
         const data = JSON.parse(text || '');
-        console.log(data)
-        console.log(block)
         commander.updateBlock(data, block);
       } catch (e) {
         console.error(e)
@@ -484,12 +490,16 @@ const ReactVisualEditor: React.FC<{
           })}
         </div>
       </section>
-      <section className="react-visual-editor-operator">operator</section>
+      <ReactVisualEditorOperator 
+        updateValue={commander.updateValue}
+        updateBlock={commander.updateBlock}
+        selectBlock={selectBlock} 
+        value={value} />
       <section className="react-visual-editor-body" ref={bodyRef}>
         <div className='react-visual-editor-container' onMouseDown={focusHandler.mouseDownContainer} ref={containerRef} style={containerStyle}>
           {
             value.blocks.map((block, index) => (
-              <ReactVisualBlock key={index} block={block} onContextMenu={(e) => handler.onContextMenuBlock(e, block)} onMouseDown={e => focusHandler.mouseDownBlock(e, block)} config={config} >
+              <ReactVisualBlock key={index} block={block} onContextMenu={(e) => handler.onContextMenuBlock(e, block)} onMouseDown={e => focusHandler.mouseDownBlock(e, block,index)} config={config} >
                 { block.focus &&
                 !!config.componentMap[block.componentKey] && !!config.componentMap[block.componentKey].resize
                 && (config.componentMap[block.componentKey].resize?.width || config.componentMap[block.componentKey].resize?.height) &&
