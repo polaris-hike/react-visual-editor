@@ -491,6 +491,7 @@ const ReactVisualEditor: React.FC<{
         </div>
       </section>
       <ReactVisualEditorOperator 
+      config={config}
         updateValue={commander.updateValue}
         updateBlock={commander.updateBlock}
         selectBlock={selectBlock} 

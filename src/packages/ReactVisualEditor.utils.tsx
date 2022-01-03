@@ -1,3 +1,5 @@
+import React from "react";
+import { ReactVisualEditorProps } from "./ReactVisualEditor.props";
 
 export interface ReactVisualEditorBlock {
     componentKey: string;
@@ -25,11 +27,16 @@ export interface ReactVisualEditorComponent {
     key: string;
     name: string;
     preview: () => JSX.Element;
-    render: (data:{size:{height?:string,width?:string}}) => JSX.Element;  
+    render: (
+        data:{
+            size:{height?:string,width?:string},
+            props: Record<string,any>
+        }) => JSX.Element;  
     resize?: {
         width?: boolean; 
         height?: boolean;
-    }
+    },
+    props?: {[k:string]:ReactVisualEditorProps},
 }
 
 export function createVisualBlock({top,left,component}:{top:number,left:number,component:ReactVisualEditorComponent}):ReactVisualEditorBlock {
@@ -50,7 +57,22 @@ export function createVisualConfig() {
     const componentMap:{[key: string]:ReactVisualEditorComponent} = {};
     const componentArray: ReactVisualEditorComponent[] = [];
 
-    function registryComponent(key:string,options:Omit<ReactVisualEditorComponent,'key'>) {
+    function registryComponent<_,
+        Props extends {[k: string]: ReactVisualEditorProps}
+    >(key:string,options: {
+        name: string;
+        preview: () => JSX.Element;
+        render: (
+            data:{
+                size:{height?:string,width?:string},
+                props:{[k in keyof Props]: any},
+            }) => JSX.Element;  
+        resize?: {
+            width?: boolean; 
+            height?: boolean;
+        },
+        props?:Props
+    }) {
         const component = componentMap[key];
         if (component) {
             componentArray.splice(componentArray.indexOf(component,1))
@@ -59,8 +81,8 @@ export function createVisualConfig() {
             key,
             ...options
         }
-        componentArray.push(newComponent);
-        componentMap[key] = newComponent;
+        componentArray.push(newComponent as any);
+        componentMap[key] = newComponent as any;
     }
     
     return {componentMap,componentArray,registryComponent}

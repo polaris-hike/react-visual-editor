@@ -1,43 +1,45 @@
-import { Button, Form, InputNumber } from 'antd';
+import { Button, Form, Input, InputNumber, Select } from 'antd';
 import deepcopy from 'deepcopy';
 import { useEffect, useState } from 'react';
+import { SketchPicker } from 'react-color';
+import { EReactVisualEditorPropsType, ReactVisualEditorProps } from './ReactVisualEditor.props';
 import './ReactVisualEditor.scss';
-import { ReactVisualEditorBlock, ReactVisualEditorValue } from './ReactVisualEditor.utils';
+import { ReactVisualConfig, ReactVisualEditorBlock, ReactVisualEditorValue } from './ReactVisualEditor.utils';
 
-const ReactVisualEditorOperator:React.FC<{
-    selectBlock?:ReactVisualEditorBlock,
+const ReactVisualEditorOperator: React.FC<{
+    selectBlock?: ReactVisualEditorBlock,
     value: ReactVisualEditorValue,
-    updateValue:(val:ReactVisualEditorValue) => void,
-    updateBlock: (newBlock:ReactVisualEditorBlock,oldBlock:ReactVisualEditorBlock) => void,
+    config: ReactVisualConfig,
+    updateValue: (val: ReactVisualEditorValue) => void,
+    updateBlock: (newBlock: ReactVisualEditorBlock, oldBlock: ReactVisualEditorBlock) => void,
 }> = (props) => {
-    const { selectBlock, value, updateBlock, updateValue } = props;
-    const [editData,setEditData] = useState({} as any);
+    const { selectBlock, value, config, updateBlock, updateValue } = props;
+    const [editData, setEditData] = useState({} as any);
     const [form] = Form.useForm();
 
     const methods = {
-        apply:() => {
-            if (props.selectBlock) {
-                // updateBlock()
+        apply: () => {
+            if (selectBlock) {
+                updateBlock(deepcopy(editData),selectBlock)
             } else {
-                console.log(editData)
                 updateValue({
                     ...value,
-                    container:editData
+                    container: editData
                 })
             }
         },
-        reset:() => {
-            let data:any;
+        reset: () => {
+            let data: any;
             if (!!selectBlock) {
-                data = deepcopy(props.selectBlock)
+                data = deepcopy(selectBlock)
             } else {
-                data = deepcopy(props.value.container)
+                data = deepcopy(value.container)
             }
             setEditData(data);
             form.resetFields();
             form.setFieldsValue(data);
         },
-        onFormValuesChange: (changeValues:any,values:any) => {
+        onFormValuesChange: (changeValues: any, values: any) => {
             setEditData({
                 ...editData,
                 ...values
@@ -58,12 +60,15 @@ const ReactVisualEditorOperator:React.FC<{
             </Form.Item>
         )
     } else {
-        render.push(<span>编辑block属性</span>)
+        const component = config.componentMap[selectBlock.componentKey];
+        if (component) {
+            render.push(...Object.entries(component.props || {}).map(([propName, propConfig]) => renderEditor(propName,propConfig)))
+        }
     }
 
     useEffect(() => {
         methods.reset()
-    },[selectBlock])
+    }, [selectBlock])
 
 
     return (
@@ -74,12 +79,43 @@ const ReactVisualEditorOperator:React.FC<{
             <Form form={form} layout='vertical' onValuesChange={methods.onFormValuesChange}>
                 {render}
                 <Form.Item key={'operator'}>
-                    <Button type='primary' onClick={methods.apply} style={{marginRight:'8px'}}>应用</Button>
+                    <Button type='primary' onClick={methods.apply} style={{ marginRight: '8px' }}>应用</Button>
                     <Button onClick={methods.reset}>重置</Button>
                 </Form.Item>
             </Form>
         </div>
     )
+}
+
+function renderEditor(propsName: string, propsConfig: ReactVisualEditorProps) {
+    switch (propsConfig.type) {
+        case EReactVisualEditorPropsType.text:
+            return (
+                <Form.Item label={propsConfig.name} name={['props',propsName]} key={`prop_${propsName}`}>
+                    <Input />
+                </Form.Item>
+            )
+        case EReactVisualEditorPropsType.select:
+            return (
+                <Form.Item label={propsConfig.name} name={['props',propsName]} key={`prop_${propsName}`}>
+                    <Select>
+                        {
+                            propsConfig.options && propsConfig.options.map((opt, index) => (
+                                <Select.Option value={opt.value} key={index}>
+                                    {opt.label}
+                                </Select.Option>
+                            ))
+                        }
+                    </Select>
+                </Form.Item>
+            )
+        case EReactVisualEditorPropsType.color:
+            return (
+                <Form.Item label={propsConfig.name} name={['props',propsName]} key={`prop_${propsName}`}>
+                     <SketchPicker />
+                </Form.Item>
+            )
+    }
 }
 
 

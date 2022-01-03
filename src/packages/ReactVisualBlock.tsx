@@ -10,7 +10,7 @@ export const ReactVisualBlock: React.FC<{
     onMouseDown?: (e:React.MouseEvent<HTMLDivElement>)=>void,
     onContextMenu?: (e:React.MouseEvent<HTMLDivElement>)=>void,
 }> = (props) => {
-    const { config,block } = props;
+    const { config,block,onMouseDown,onContextMenu,children } = props;
     const component = config.componentMap[block.componentKey];
     const {forceUpdate} = useUpdate();
     const blockStyle = useMemo(() => {
@@ -25,8 +25,8 @@ export const ReactVisualBlock: React.FC<{
 
     const classes = useMemo(()=>classnames([
       'react-visual-editor-block',
-      props.block.focus && 'react-visual-editor-block-focus'
-      ]),[props.block.focus])
+      block.focus && 'react-visual-editor-block-focus'
+      ]),[block.focus])
 
     useEffect(() => {
         if (block.adjustPosition) {
@@ -44,25 +44,23 @@ export const ReactVisualBlock: React.FC<{
       let render:any;
       if (!!component) {
         render = component.render({
-          size: props.block.hasResize && component.resize ? (()=>{
+          size: block.hasResize && component.resize ? (()=>{
             let styles = {
               width: undefined as undefined | string,
               height: undefined as undefined | string
             }
-            !!component.resize.width && (styles.width = `${props.block.width}px`);
-            !!component.resize.height && (styles.height = `${props.block.height}px`);
+            !!component.resize.width && (styles.width = `${block.width}px`);
+            !!component.resize.height && (styles.height = `${block.height}px`);
             return styles;
-          })() : {           
-              width: block.width +'px',
-              height: block.height +'px'
-          }
+          })() : {},
+          props: block.props || {}
         })
       }
 
     return (
-        <div className={classes} onMouseDown={props.onMouseDown} onContextMenu={props.onContextMenu} ref={elRef} style={blockStyle}>
+        <div className={classes} onMouseDown={onMouseDown} onContextMenu={onContextMenu} ref={elRef} style={blockStyle}>
             {render}
-            {props.children}
+            {children}
         </div>
     )
 }
