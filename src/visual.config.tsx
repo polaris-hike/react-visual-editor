@@ -1,5 +1,5 @@
-import { Button, Input } from "antd";
-import { createColorProps, createSelectProps, createTextProps } from "./packages/ReactVisualEditor.props";
+import { Button, Input, Select } from "antd";
+import { createColorProps, createSelectProps, createTableProps, createTextProps } from "./packages/ReactVisualEditor.props";
 import { createVisualConfig } from "./packages/ReactVisualEditor.utils";
 
 
@@ -62,5 +62,37 @@ visualConfig.registryComponent('input',{
     render: ({size}) => <Input style={size} />,
     resize: {
         width: true
+    }
+})
+
+visualConfig.registryComponent('select', {
+    name: '下拉框',
+    preview: () => (
+        <Select>
+            <Select.Option value={1234}>蛋糕</Select.Option>
+        </Select>
+    ),
+    render: ({props,size}) => (
+        <Select 
+            style={{
+                width:size.width || '225px'
+            }}
+            key={(props.options || []).map(({label,value}:{label:string,value:string}) => `${label}_${value}`).join('.')}>
+            {   
+                (props.options || []).map((opt:any,index:number) => (
+                    <Select.Option value={opt.val} key={index}>{opt.label}</Select.Option>
+                ))
+            }
+        </Select>
+    ),
+    resize:{
+        width: true
+    },
+    props: {
+        options: createTableProps('下拉选项','label' , [
+            {name:'选项显示值',field:'label'},
+            {name:'选项值',field:'value'},
+            {name:'备注',field:'comments'},
+        ])
     }
 })

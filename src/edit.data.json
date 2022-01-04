@@ -43,6 +43,33 @@
             "adjustPosition": false,
             "focus": false,
             "zIndex": 0
+        },
+        {
+            "componentKey": "select",
+            "left": 199.99999809265137,
+            "top": 326,
+            "width": 225,
+            "height": 32,
+            "adjustPosition": false,
+            "focus": false,
+            "zIndex": 0,
+            "hasResize": false,
+            "props": {
+                "options": [
+                    {
+                        "key": 1641303249027,
+                        "label": "牛奶",
+                        "value": "14",
+                        "comments": "124"
+                    },
+                    {
+                        "key": 1641303249028,
+                        "label": "蛋糕",
+                        "value": "2345",
+                        "comments": "235"
+                    }
+                ]
+            }
         }
     ]
 }

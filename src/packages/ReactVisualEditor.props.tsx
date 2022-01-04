@@ -2,10 +2,11 @@ export enum EReactVisualEditorPropsType {
     text = 'text',
     select = 'select',
     color = 'color',
+    table = 'table',
 }
 
 
-export type ReactVisualEditorProps = ReactVisualEditorTextProp | ReactVisualEditorSelectProps | ReactVisualEditorColorProps;
+export type ReactVisualEditorProps = ReactVisualEditorTextProp | ReactVisualEditorSelectProps | ReactVisualEditorColorProps | ReactVisualEditorTableProps;
 
 interface ReactVisualEditorTextProp {
     name: string;
@@ -44,3 +45,27 @@ export function createColorProps(name:string):ReactVisualEditorColorProps {
         type: EReactVisualEditorPropsType.color
     }
 }
+
+export type ReactVisualEditorTableProps = {
+    name:string,
+    showField: string,
+    type: EReactVisualEditorPropsType.table,
+    columns: {
+        name: string,
+        field: string
+    }[],
+}
+
+export function createTableProps(name:string,showField:string,columns:{
+    name: string,
+    field: string
+}[]):ReactVisualEditorTableProps {
+    return {
+        name,
+        type: EReactVisualEditorPropsType.table,
+        columns,
+        showField
+    }
+}
+
+

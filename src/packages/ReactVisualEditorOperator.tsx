@@ -2,6 +2,8 @@ import { Button, Form, Input, InputNumber, Select } from 'antd';
 import deepcopy from 'deepcopy';
 import { useEffect, useState } from 'react';
 import { SketchPicker } from 'react-color';
+import { TablePropEditor } from './components/TablePropEditor/TablePropEditor';
+import { getHookState } from './hooks/getHookState';
 import { EReactVisualEditorPropsType, ReactVisualEditorProps } from './ReactVisualEditor.props';
 import './ReactVisualEditor.scss';
 import { ReactVisualConfig, ReactVisualEditorBlock, ReactVisualEditorValue } from './ReactVisualEditor.utils';
@@ -18,7 +20,8 @@ const ReactVisualEditorOperator: React.FC<{
     const [form] = Form.useForm();
 
     const methods = {
-        apply: () => {
+        apply: async () => {
+            const editData:any = await getHookState(setEditData);
             if (selectBlock) {
                 updateBlock(deepcopy(editData),selectBlock)
             } else {
@@ -62,7 +65,7 @@ const ReactVisualEditorOperator: React.FC<{
     } else {
         const component = config.componentMap[selectBlock.componentKey];
         if (component) {
-            render.push(...Object.entries(component.props || {}).map(([propName, propConfig]) => renderEditor(propName,propConfig)))
+            render.push(...Object.entries(component.props || {}).map(([propName, propConfig]) => renderEditor(propName,propConfig,methods.apply)))
         }
     }
 
@@ -87,7 +90,7 @@ const ReactVisualEditorOperator: React.FC<{
     )
 }
 
-function renderEditor(propsName: string, propsConfig: ReactVisualEditorProps) {
+function renderEditor(propsName: string, propsConfig: ReactVisualEditorProps,apply: () => void) {
     switch (propsConfig.type) {
         case EReactVisualEditorPropsType.text:
             return (
@@ -113,6 +116,12 @@ function renderEditor(propsName: string, propsConfig: ReactVisualEditorProps) {
             return (
                 <Form.Item label={propsConfig.name} name={['props',propsName]} key={`prop_${propsName}`}>
                      <SketchPicker />
+                </Form.Item>
+            )
+        case EReactVisualEditorPropsType.table:
+            return (
+                <Form.Item label={propsConfig.name} name={['props',propsName]} key={`prop_${propsName}`}>
+                    <TablePropEditor config={propsConfig} onChange={() => setTimeout(apply)} />
                 </Form.Item>
             )
     }
