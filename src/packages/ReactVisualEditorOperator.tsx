@@ -66,6 +66,13 @@ const ReactVisualEditorOperator: React.FC<{
         const component = config.componentMap[selectBlock.componentKey];
         if (component) {
             render.push(...Object.entries(component.props || {}).map(([propName, propConfig]) => renderEditor(propName,propConfig,methods.apply)))
+            render.push(
+                ...Object.entries(component.model || {}).map(([modelProp,modelName]) =>{
+                    return <Form.Item label={modelName} name={['model',modelProp]} key={`model_${modelName}`}>
+                            <Input />
+                    </Form.Item>
+                }
+            ))
         }
     }
 

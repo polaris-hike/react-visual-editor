@@ -7,11 +7,16 @@ import { visualConfig } from './visual.config';
 import editData from './edit.data.json';
 
 function App() {
-  const  [editorValue,setEditorValue] = useState<ReactVisualEditorValue>(editData)
+  const  [editorValue,setEditorValue] = useState<ReactVisualEditorValue>(editData as ReactVisualEditorValue);
+  const [formData,onFormDataChange] = useState({
+    username:'admin',
+    minLevel: 100,
+    maxLevel: 200
+  } as any);  
 
   return (
     <>
-    <ReactVisualEditor config={visualConfig} value={editorValue} onChange={setEditorValue} />
+    <ReactVisualEditor formData={formData} onFormDataChange={onFormDataChange} config={visualConfig} value={editorValue} onChange={setEditorValue} />
     </>
   );
 }

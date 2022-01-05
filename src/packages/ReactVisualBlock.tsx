@@ -9,6 +9,8 @@ export const ReactVisualBlock: React.FC<{
     config: ReactVisualConfig,
     onMouseDown?: (e:React.MouseEvent<HTMLDivElement>)=>void,
     onContextMenu?: (e:React.MouseEvent<HTMLDivElement>)=>void,
+    formData: Record<string,any>,
+    onFormDataChange: (formData: Record<string,any>) => void,
 }> = (props) => {
     const { config,block,onMouseDown,onContextMenu,children } = props;
     const component = config.componentMap[block.componentKey];
@@ -53,7 +55,31 @@ export const ReactVisualBlock: React.FC<{
             !!component.resize.height && (styles.height = `${block.height}px`);
             return styles;
           })() : {},
-          props: block.props || {}
+          props: block.props || {},
+          model: Object.entries(component.model || {}).reduce((prev,item) => {
+            const [modelProp,modelName] = item;
+            prev[modelProp] = {
+              value: !block.model || !block.model[modelProp] ? null : props.formData[block.model[modelProp]],
+              onChange:(e) => {
+                if (!block.model || !block.model[modelProp]) return;
+                let val:any;
+                if (!e ) {
+                  val = e;
+                } else {
+                  if ( typeof e ==='object' && 'target' in e ) {
+                    val = e.target.value
+                  } else {
+                    val = e;
+                  }
+                }
+                props.onFormDataChange({
+                  ...props.formData,
+                  [block.model[modelProp]] : val
+                })
+              }
+            }
+            return prev;
+          },{} as  Record<string,{value:any,onChange:(val:any) => void}>)
         })
       }
 

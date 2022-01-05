@@ -15,7 +15,9 @@ import ReactVisualEditorOperator from './ReactVisualEditorOperator';
 const ReactVisualEditor: React.FC<{
   value: ReactVisualEditorValue,
   onChange: (val: ReactVisualEditorValue) => void,
-  config: ReactVisualConfig
+  config: ReactVisualConfig,
+  formData: Record<string,any>,
+  onFormDataChange: (formData: Record<string,any>) => void,
 }> = (props) => {
   const { value, config, onChange } = props;
   const [preview, setPreview] = useState(false);
@@ -498,9 +500,11 @@ const ReactVisualEditor: React.FC<{
         value={value} />
       <section className="react-visual-editor-body" ref={bodyRef}>
         <div className='react-visual-editor-container' onMouseDown={focusHandler.mouseDownContainer} ref={containerRef} style={containerStyle}>
+      {JSON.stringify(props.formData)}
+         
           {
             value.blocks.map((block, index) => (
-              <ReactVisualBlock key={index} block={block} onContextMenu={(e) => handler.onContextMenuBlock(e, block)} onMouseDown={e => focusHandler.mouseDownBlock(e, block,index)} config={config} >
+              <ReactVisualBlock formData={props.formData} onFormDataChange={props.onFormDataChange} key={index} block={block} onContextMenu={(e) => handler.onContextMenuBlock(e, block)} onMouseDown={e => focusHandler.mouseDownBlock(e, block,index)} config={config} >
                 { block.focus &&
                 !!config.componentMap[block.componentKey] && !!config.componentMap[block.componentKey].resize
                 && (config.componentMap[block.componentKey].resize?.width || config.componentMap[block.componentKey].resize?.height) &&

@@ -7,7 +7,7 @@ export interface ReactVisualEditorBlock {
     left: number;
     width: number;
     height: number;
-    adjustPosition:boolean;
+    adjustPosition: boolean;
     focus: boolean;
     zIndex: number,
     props?: Record<string, any>,
@@ -28,20 +28,22 @@ export interface ReactVisualEditorComponent {
     name: string;
     preview: () => JSX.Element;
     render: (
-        data:{
-            size:{height?:string,width?:string},
-            props: Record<string,any>
-        }) => JSX.Element;  
+        data: {
+            size: { height?: string, width?: string },
+            props: Record<string, any>,
+            model: Record<string,any>,
+        }) => JSX.Element;
     resize?: {
-        width?: boolean; 
+        width?: boolean;
         height?: boolean;
     },
-    props?: {[k:string]:ReactVisualEditorProps},
+    props?: { [k: string]: ReactVisualEditorProps },
+    model?: {[k:string]:string}
 }
 
-export function createVisualBlock({top,left,component}:{top:number,left:number,component:ReactVisualEditorComponent}):ReactVisualEditorBlock {
+export function createVisualBlock({ top, left, component }: { top: number, left: number, component: ReactVisualEditorComponent }): ReactVisualEditorBlock {
     return {
-        componentKey:component.key,
+        componentKey: component.key,
         left,
         top,
         width: 0,
@@ -54,28 +56,31 @@ export function createVisualBlock({top,left,component}:{top:number,left:number,c
 }
 
 export function createVisualConfig() {
-    const componentMap:{[key: string]:ReactVisualEditorComponent} = {};
+    const componentMap: { [key: string]: ReactVisualEditorComponent } = {};
     const componentArray: ReactVisualEditorComponent[] = [];
 
-    function registryComponent<_,
-        Props extends {[k: string]: ReactVisualEditorProps}
-    >(key:string,options: {
+    function registryComponent<
+        Props extends { [k: string]: ReactVisualEditorProps },
+        Model extends { [k: string]: string } = {}
+    >(key: string, options: {
         name: string;
         preview: () => JSX.Element;
         render: (
-            data:{
-                size:{height?:string,width?:string},
-                props:{[k in keyof Props]: any},
-            }) => JSX.Element;  
+            data: {
+                size: { height?: string, width?: string },
+                props: { [k in keyof Props]: any },
+                model: { [k in keyof Model]: { value: any, onChange: (val: any) => void } }
+            }) => JSX.Element;
         resize?: {
-            width?: boolean; 
+            width?: boolean;
             height?: boolean;
         },
-        props?:Props
+        props?: Props,
+        model?: Model
     }) {
         const component = componentMap[key];
         if (component) {
-            componentArray.splice(componentArray.indexOf(component,1))
+            componentArray.splice(componentArray.indexOf(component, 1))
         }
         const newComponent = {
             key,
@@ -84,8 +89,8 @@ export function createVisualConfig() {
         componentArray.push(newComponent as any);
         componentMap[key] = newComponent as any;
     }
-    
-    return {componentMap,componentArray,registryComponent}
+
+    return { componentMap, componentArray, registryComponent }
 }
 
 export type ReactVisualConfig = ReturnType<typeof createVisualConfig>
