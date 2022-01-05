@@ -13,6 +13,7 @@ export interface ReactVisualEditorBlock {
     props?: Record<string, any>,
     model?: Record<string, string>,
     hasResize: boolean;
+    slotName?: string,
 }
 
 export interface ReactVisualEditorValue {
@@ -29,9 +30,11 @@ export interface ReactVisualEditorComponent {
     preview: () => JSX.Element;
     render: (
         data: {
+            block: ReactVisualEditorBlock,
             size: { height?: string, width?: string },
             props: Record<string, any>,
             model: Record<string,any>,
+            custom?: Record<string,any>,
         }) => JSX.Element;
     resize?: {
         width?: boolean;
@@ -67,6 +70,8 @@ export function createVisualConfig() {
         preview: () => JSX.Element;
         render: (
             data: {
+                custom: Record<string,any>,
+                block: ReactVisualEditorBlock,
                 size: { height?: string, width?: string },
                 props: { [k in keyof Props]: any },
                 model: { [k in keyof Model]: { value: any, onChange: (val: any) => void } }

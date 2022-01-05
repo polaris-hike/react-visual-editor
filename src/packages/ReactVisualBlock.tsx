@@ -11,6 +11,7 @@ export const ReactVisualBlock: React.FC<{
     onContextMenu?: (e:React.MouseEvent<HTMLDivElement>)=>void,
     formData: Record<string,any>,
     onFormDataChange: (formData: Record<string,any>) => void,
+    customProps?: Record<string,Record<string,any>>
 }> = (props) => {
     const { config,block,onMouseDown,onContextMenu,children } = props;
     const component = config.componentMap[block.componentKey];
@@ -46,6 +47,8 @@ export const ReactVisualBlock: React.FC<{
       let render:any;
       if (!!component) {
         render = component.render({
+          block,
+          custom: !block.slotName || !props.customProps ? {} :(props.customProps[block.slotName] || {}),
           size: block.hasResize && component.resize ? (()=>{
             let styles = {
               width: undefined as undefined | string,

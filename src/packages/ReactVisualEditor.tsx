@@ -18,6 +18,7 @@ const ReactVisualEditor: React.FC<{
   config: ReactVisualConfig,
   formData: Record<string,any>,
   onFormDataChange: (formData: Record<string,any>) => void,
+  customProps?: Record<string,Record<string,any>>
 }> = (props) => {
   const { value, config, onChange } = props;
   const [preview, setPreview] = useState(false);
@@ -504,7 +505,7 @@ const ReactVisualEditor: React.FC<{
          
           {
             value.blocks.map((block, index) => (
-              <ReactVisualBlock formData={props.formData} onFormDataChange={props.onFormDataChange} key={index} block={block} onContextMenu={(e) => handler.onContextMenuBlock(e, block)} onMouseDown={e => focusHandler.mouseDownBlock(e, block,index)} config={config} >
+              <ReactVisualBlock customProps={props.customProps} formData={props.formData} onFormDataChange={props.onFormDataChange} key={index} block={block} onContextMenu={(e) => handler.onContextMenuBlock(e, block)} onMouseDown={e => focusHandler.mouseDownBlock(e, block,index)} config={config} >
                 { block.focus &&
                 !!config.componentMap[block.componentKey] && !!config.componentMap[block.componentKey].resize
                 && (config.componentMap[block.componentKey].resize?.width || config.componentMap[block.componentKey].resize?.height) &&

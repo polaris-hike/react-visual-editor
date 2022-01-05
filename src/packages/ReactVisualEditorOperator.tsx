@@ -21,9 +21,9 @@ const ReactVisualEditorOperator: React.FC<{
 
     const methods = {
         apply: async () => {
-            const editData:any = await getHookState(setEditData);
+            const editData: any = await getHookState(setEditData);
             if (selectBlock) {
-                updateBlock(deepcopy(editData),selectBlock)
+                updateBlock(deepcopy(editData), selectBlock)
             } else {
                 updateValue({
                     ...value,
@@ -65,14 +65,19 @@ const ReactVisualEditorOperator: React.FC<{
     } else {
         const component = config.componentMap[selectBlock.componentKey];
         if (component) {
-            render.push(...Object.entries(component.props || {}).map(([propName, propConfig]) => renderEditor(propName,propConfig,methods.apply)))
+            render.push(...Object.entries(component.props || {}).map(([propName, propConfig]) => renderEditor(propName, propConfig, methods.apply)))
             render.push(
-                ...Object.entries(component.model || {}).map(([modelProp,modelName]) =>{
-                    return <Form.Item label={modelName} name={['model',modelProp]} key={`model_${modelName}`}>
-                            <Input />
+                ...Object.entries(component.model || {}).map(([modelProp, modelName]) => {
+                    return <Form.Item label={modelName} name={['model', modelProp]} key={`model_${modelName}`}>
+                        <Input />
                     </Form.Item>
                 }
-            ))
+                ));
+            render.push(
+                <Form.Item label="组件标识" name="slotName" key="slotName">
+                    <Input />
+                </Form.Item>
+            )
         }
     }
 
@@ -97,17 +102,17 @@ const ReactVisualEditorOperator: React.FC<{
     )
 }
 
-function renderEditor(propsName: string, propsConfig: ReactVisualEditorProps,apply: () => void) {
+function renderEditor(propsName: string, propsConfig: ReactVisualEditorProps, apply: () => void) {
     switch (propsConfig.type) {
         case EReactVisualEditorPropsType.text:
             return (
-                <Form.Item label={propsConfig.name} name={['props',propsName]} key={`prop_${propsName}`}>
+                <Form.Item label={propsConfig.name} name={['props', propsName]} key={`prop_${propsName}`}>
                     <Input />
                 </Form.Item>
             )
         case EReactVisualEditorPropsType.select:
             return (
-                <Form.Item label={propsConfig.name} name={['props',propsName]} key={`prop_${propsName}`}>
+                <Form.Item label={propsConfig.name} name={['props', propsName]} key={`prop_${propsName}`}>
                     <Select>
                         {
                             propsConfig.options && propsConfig.options.map((opt, index) => (
@@ -121,13 +126,13 @@ function renderEditor(propsName: string, propsConfig: ReactVisualEditorProps,app
             )
         case EReactVisualEditorPropsType.color:
             return (
-                <Form.Item label={propsConfig.name} name={['props',propsName]} key={`prop_${propsName}`}>
-                     <SketchPicker />
+                <Form.Item label={propsConfig.name} name={['props', propsName]} key={`prop_${propsName}`}>
+                    <SketchPicker />
                 </Form.Item>
             )
         case EReactVisualEditorPropsType.table:
             return (
-                <Form.Item label={propsConfig.name} name={['props',propsName]} key={`prop_${propsName}`}>
+                <Form.Item label={propsConfig.name} name={['props', propsName]} key={`prop_${propsName}`}>
                     <TablePropEditor config={propsConfig} onChange={() => setTimeout(apply)} />
                 </Form.Item>
             )
