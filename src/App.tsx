@@ -32,7 +32,18 @@ function App() {
 
   return (
     <>
-    <ReactVisualEditor customProps={customProps} formData={formData} onFormDataChange={onFormDataChange} config={visualConfig} value={editorValue} onChange={setEditorValue} />
+    <ReactVisualEditor 
+    customProps={customProps} 
+    formData={formData} 
+    onFormDataChange={onFormDataChange} 
+    config={visualConfig} 
+    value={editorValue} 
+    onChange={setEditorValue} >
+      {{
+        buttonComponent:formData.username.length > 5 ? undefined: () => <button>普通按钮</button>
+      }
+      }
+    </ReactVisualEditor>
     </>
   );
 }

@@ -11,9 +11,10 @@ export const ReactVisualBlock: React.FC<{
     onContextMenu?: (e:React.MouseEvent<HTMLDivElement>)=>void,
     formData: Record<string,any>,
     onFormDataChange: (formData: Record<string,any>) => void,
-    customProps?: Record<string,Record<string,any>>
+    customProps?: Record<string,Record<string,any>>,
+    editorChildren: Record<string,undefined |( () => any)>
 }> = (props) => {
-    const { config,block,onMouseDown,onContextMenu,children } = props;
+    const { config,block,onMouseDown,onContextMenu,children,editorChildren } = props;
     const component = config.componentMap[block.componentKey];
     const {forceUpdate} = useUpdate();
     const blockStyle = useMemo(() => {
@@ -45,7 +46,9 @@ export const ReactVisualBlock: React.FC<{
       }, []);
 
       let render:any;
-      if (!!component) {
+      if (!!block.slotName && !!editorChildren[block.slotName]){
+        render = editorChildren[block.slotName]!()
+      }else if (!!component) {
         render = component.render({
           block,
           custom: !block.slotName || !props.customProps ? {} :(props.customProps[block.slotName] || {}),

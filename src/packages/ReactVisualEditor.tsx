@@ -16,18 +16,19 @@ const ReactVisualEditor: React.FC<{
   value: ReactVisualEditorValue,
   onChange: (val: ReactVisualEditorValue) => void,
   config: ReactVisualConfig,
-  formData: Record<string,any>,
-  onFormDataChange: (formData: Record<string,any>) => void,
-  customProps?: Record<string,Record<string,any>>
+  formData: Record<string, any>,
+  onFormDataChange: (formData: Record<string, any>) => void,
+  customProps?: Record<string, Record<string, any>>,
+  children: Record<string, undefined | (() => any)>
 }> = (props) => {
   const { value, config, onChange } = props;
   const [preview, setPreview] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [selectIndex,setSelectIndex] = useState(-1);
+  const [selectIndex, setSelectIndex] = useState(-1);
   const [dragstart] = useState(() => createEvent());
   const [dragend] = useState(() => createEvent());
 
-  const selectBlock = useMemo(() => value.blocks[selectIndex] as ReactVisualEditorBlock | undefined,[value.blocks,selectIndex])
+  const selectBlock = useMemo(() => value.blocks[selectIndex] as ReactVisualEditorBlock | undefined, [value.blocks, selectIndex])
 
   const containerStyle = useMemo(() => {
     return {
@@ -107,7 +108,7 @@ const ReactVisualEditor: React.FC<{
         y: [] as { top: number, showTop: number }[],
       },
       body: {
-        startScrollTop:0,
+        startScrollTop: 0,
         moveScrollTop: 0
       },
       moveX: 0,
@@ -118,7 +119,7 @@ const ReactVisualEditor: React.FC<{
     const mousedown = useCallbackRef((e: React.MouseEvent<HTMLDivElement>, block: ReactVisualEditorBlock) => {
       document.addEventListener('mousemove', mousemove);
       document.addEventListener('mouseup', mouseup);
-      bodyRef.current.addEventListener('scroll',scroll)
+      bodyRef.current.addEventListener('scroll', scroll)
       dragData.current = {
         startX: e.clientX,
         startY: e.clientY,
@@ -131,7 +132,7 @@ const ReactVisualEditor: React.FC<{
         moveY: e.clientY,
         body: {
           startScrollTop: bodyRef.current.scrollTop,
-           moveScrollTop: bodyRef.current.scrollTop,
+          moveScrollTop: bodyRef.current.scrollTop,
         },
         markLines: (() => {
           const x = [] as { left: number, showLeft: number }[];
@@ -160,7 +161,7 @@ const ReactVisualEditor: React.FC<{
         dragData.current.dragging = true;
         dragstart.emit();
       };
-      let { startX, startY, startPosArray, markLines, startTop, startLeft,moveX,moveY,body,shiftKey } = dragData.current;
+      let { startX, startY, startPosArray, markLines, startTop, startLeft, moveX, moveY, body, shiftKey } = dragData.current;
       moveY += body.moveScrollTop - body.startScrollTop
 
       if (shiftKey) {
@@ -211,7 +212,7 @@ const ReactVisualEditor: React.FC<{
     const mouseup = useCallbackRef((e: MouseEvent) => {
       document.removeEventListener('mousemove', mousemove);
       document.removeEventListener('mouseup', mouseup);
-      bodyRef.current.removeEventListener('scroll',scroll)
+      bodyRef.current.removeEventListener('scroll', scroll)
       setMark({ x: null, y: null })
       if (dragData.current.dragging) {
         dragend.emit();
@@ -226,61 +227,61 @@ const ReactVisualEditor: React.FC<{
   })();
 
   const resizeDraggier = (() => {
-    
+
     const dragData = useRef({
-        startX: 0,
-        startY: 0,
-        startWidth: 0,
-        startHeight: 0,
-        startLeft: 0,
-        startTop: 0,
-        dragging: false,
-        direction: {
-            horizontal: BlockResizeDirection.start,
-            vertical: BlockResizeDirection.start,
-        },
-        block: null as null | ReactVisualEditorBlock,
+      startX: 0,
+      startY: 0,
+      startWidth: 0,
+      startHeight: 0,
+      startLeft: 0,
+      startTop: 0,
+      dragging: false,
+      direction: {
+        horizontal: BlockResizeDirection.start,
+        vertical: BlockResizeDirection.start,
+      },
+      block: null as null | ReactVisualEditorBlock,
     })
 
     const mousedown = useCallbackRef((e: React.MouseEvent<HTMLDivElement>, direction: { horizontal: BlockResizeDirection, vertical: BlockResizeDirection }, block: ReactVisualEditorBlock) => {
       e.stopPropagation();
-        document.body.addEventListener('mousemove', mousemove)
-        document.body.addEventListener('mouseup', mouseup)
-        dragData.current = {
-            startX: e.clientX,
-            startY: e.clientY,
-            startWidth: block.width,
-            startHeight: block.height,
-            startLeft: block.left,
-            startTop: block.top,
-            dragging: false,
-            direction,
-            block,
-        }
+      document.body.addEventListener('mousemove', mousemove)
+      document.body.addEventListener('mouseup', mouseup)
+      dragData.current = {
+        startX: e.clientX,
+        startY: e.clientY,
+        startWidth: block.width,
+        startHeight: block.height,
+        startLeft: block.left,
+        startTop: block.top,
+        dragging: false,
+        direction,
+        block,
+      }
     })
     const mousemove = useCallbackRef((e: MouseEvent) => {
-      let {startX, startY, startWidth, startHeight, direction, startLeft, startTop, dragging, block} = dragData.current
+      let { startX, startY, startWidth, startHeight, direction, startLeft, startTop, dragging, block } = dragData.current
       if (!dragging) {
-          dragData.current.dragging = true
-          dragstart.emit()
+        dragData.current.dragging = true
+        dragstart.emit()
       }
-      let {clientX: moveX, clientY: moveY} = e
+      let { clientX: moveX, clientY: moveY } = e
       if (direction.horizontal === BlockResizeDirection.center) {
-          moveX = startX
+        moveX = startX
       }
       if (direction.vertical === BlockResizeDirection.center) {
-          moveY = startY
+        moveY = startY
       }
       let durX = moveX - startX
       let durY = moveY - startY
 
       if (direction.vertical === BlockResizeDirection.start) {
-          durY = -durY
-          block!.top = startTop - durY
+        durY = -durY
+        block!.top = startTop - durY
       }
       if (direction.horizontal === BlockResizeDirection.start) {
-          durX = -durX
-          block!.left = startLeft - durX
+        durX = -durX
+        block!.left = startLeft - durX
       }
 
       const width = startWidth + durX
@@ -289,19 +290,19 @@ const ReactVisualEditor: React.FC<{
       block!.height = height
       block!.hasResize = true
       blockChoseMethods.updateBlocks(props.value.blocks)
-  })
+    })
     const mouseup = useCallbackRef((e: MouseEvent) => {
-        document.body.removeEventListener('mousemove', mousemove)
-        document.body.removeEventListener('mouseup', mouseup)
-        if (dragData.current.dragging) {
-            dragend.emit()
-        }
+      document.body.removeEventListener('mousemove', mousemove)
+      document.body.removeEventListener('mouseup', mouseup)
+      if (dragData.current.dragging) {
+        dragend.emit()
+      }
     })
 
     return {
-        mousedown,
+      mousedown,
     }
-})();
+  })();
 
   const focusData = useMemo(() => {
     const focus: ReactVisualEditorBlock[] = [];
@@ -311,7 +312,7 @@ const ReactVisualEditor: React.FC<{
   }, [props.value.blocks]);
 
   const focusHandler = (() => {
-    const mouseDownBlock = (e: React.MouseEvent<HTMLDivElement>, block: ReactVisualEditorBlock,index:number) => {
+    const mouseDownBlock = (e: React.MouseEvent<HTMLDivElement>, block: ReactVisualEditorBlock, index: number) => {
       if (preview) return;
       if (e.button === 2) return;
       if (e.ctrlKey) {
@@ -340,8 +341,8 @@ const ReactVisualEditor: React.FC<{
       if (e.currentTarget !== e.target) {
         return
       }
-      if (!e.shiftKey) { 
-        blockChoseMethods.clearFocus(); 
+      if (!e.shiftKey) {
+        blockChoseMethods.clearFocus();
         setSelectIndex(-1);
       }
     };
@@ -462,62 +463,78 @@ const ReactVisualEditor: React.FC<{
     ]
 
   return (
-    <div className={classes}>
-      <section className="react-visual-editor-menu">
-        {
-          config.componentArray.map((component, index) => (
-            <div className="react-visual-editor-menu-component" key={index}
-              draggable
-              onDragStart={(e) => menuDraggier.block.dragstart(e, component)}
-              onDragEnd={menuDraggier.block.dragend}
-            >
-              {component.preview()}
-              <div className="react-visual-editor-menu-component-name">
-                {component.name}
-              </div>
-            </div>
-          ))
-        }
-      </section>
-      <section className="react-visual-editor-head">
-        <div className="react-visual-editor-head">
-          {buttons.map((btn, index) => {
-            const label = typeof btn.label === 'function' ? btn.label() : btn.label
-            const icon = typeof btn.icon === 'function' ? btn.icon() : btn.icon
-            return (
-              <div className="react-visual-editor-head-button" onClick={btn.handler} key={index}>
-                <i className={`iconfont ${icon}`} />
-                <span>{label}</span>
-              </div>
-            )
-          })}
-        </div>
-      </section>
-      <ReactVisualEditorOperator 
-      config={config}
-        updateValue={commander.updateValue}
-        updateBlock={commander.updateBlock}
-        selectBlock={selectBlock} 
-        value={value} />
-      <section className="react-visual-editor-body" ref={bodyRef}>
-        <div className='react-visual-editor-container' onMouseDown={focusHandler.mouseDownContainer} ref={containerRef} style={containerStyle}>
-      {JSON.stringify(props.formData)}
-         
+    <>
+      {
+        !editing && <div className='react-visual-editor-container' style={containerStyle}>
           {
             value.blocks.map((block, index) => (
-              <ReactVisualBlock customProps={props.customProps} formData={props.formData} onFormDataChange={props.onFormDataChange} key={index} block={block} onContextMenu={(e) => handler.onContextMenuBlock(e, block)} onMouseDown={e => focusHandler.mouseDownBlock(e, block,index)} config={config} >
-                { block.focus &&
-                !!config.componentMap[block.componentKey] && !!config.componentMap[block.componentKey].resize
-                && (config.componentMap[block.componentKey].resize?.width || config.componentMap[block.componentKey].resize?.height) &&
-                 <ReactVisualBlockResize onMouseDown={(e,direction) => resizeDraggier.mousedown(e,direction,block)} component={config.componentMap[block.componentKey]} block={block} />}
+              <ReactVisualBlock editorChildren={props.children} customProps={props.customProps} formData={props.formData} onFormDataChange={props.onFormDataChange} key={index} block={block} config={config} >
               </ReactVisualBlock>
             ))
           }
-          {blockDraggier.mark.x !== null && <div className="react-visual-editor-mark-x" style={{ left: `${blockDraggier.mark.x}px` }}></div>}
-          {blockDraggier.mark.y !== null && <div className="react-visual-editor-mark-y" style={{ top: `${blockDraggier.mark.y}px` }}></div>}
+          <div className="react-visual-container-edit-button" onClick={() => setEditing(true)}>
+            <i className="iconfont icon-edit" />
+            <span>编辑组件</span>
+          </div>
         </div>
-      </section>
-    </div>
+      }
+      {editing && <div className={classes}>
+        <section className="react-visual-editor-menu">
+          {
+            config.componentArray.map((component, index) => (
+              <div className="react-visual-editor-menu-component" key={index}
+                draggable
+                onDragStart={(e) => menuDraggier.block.dragstart(e, component)}
+                onDragEnd={menuDraggier.block.dragend}
+              >
+                {component.preview()}
+                <div className="react-visual-editor-menu-component-name">
+                  {component.name}
+                </div>
+              </div>
+            ))
+          }
+        </section>
+        <section className="react-visual-editor-head">
+          <div className="react-visual-editor-head">
+            {buttons.map((btn, index) => {
+              const label = typeof btn.label === 'function' ? btn.label() : btn.label
+              const icon = typeof btn.icon === 'function' ? btn.icon() : btn.icon
+              return (
+                <div className="react-visual-editor-head-button" onClick={btn.handler} key={index}>
+                  <i className={`iconfont ${icon}`} />
+                  <span>{label}</span>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+        <ReactVisualEditorOperator
+          config={config}
+          updateValue={commander.updateValue}
+          updateBlock={commander.updateBlock}
+          selectBlock={selectBlock}
+          value={value} />
+        <section className="react-visual-editor-body" ref={bodyRef}>
+          <div className='react-visual-editor-container' onMouseDown={focusHandler.mouseDownContainer} ref={containerRef} style={containerStyle}>
+            {
+              value.blocks.map((block, index) => (
+                <ReactVisualBlock editorChildren={props.children} customProps={props.customProps} formData={props.formData} onFormDataChange={props.onFormDataChange} key={index} block={block} onContextMenu={(e) => handler.onContextMenuBlock(e, block)} onMouseDown={e => focusHandler.mouseDownBlock(e, block, index)} config={config} >
+                  {block.focus &&
+                    !!config.componentMap[block.componentKey] && !!config.componentMap[block.componentKey].resize
+                    && (config.componentMap[block.componentKey].resize?.width || config.componentMap[block.componentKey].resize?.height) &&
+                    <ReactVisualBlockResize onMouseDown={(e, direction) => resizeDraggier.mousedown(e, direction, block)} component={config.componentMap[block.componentKey]} block={block} />}
+                </ReactVisualBlock>
+              ))
+            }
+            {blockDraggier.mark.x !== null && <div className="react-visual-editor-mark-x" style={{ left: `${blockDraggier.mark.x}px` }}></div>}
+            {blockDraggier.mark.y !== null && <div className="react-visual-editor-mark-y" style={{ top: `${blockDraggier.mark.y}px` }}></div>}
+          </div>
+        </section>
+      </div>}
+    </>
+
+
   )
 }
 
